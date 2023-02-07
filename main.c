@@ -1,4 +1,6 @@
 #include "stdio.h"
+#include "stdlib.h"
+#include "time.h"
 
 typedef unsigned long long int bitboard;
 
@@ -395,53 +397,61 @@ void render_raw(Cube *cube) {
 
 void render(Cube *cube) {
   for (int j = 0; j < 3; ++j) {
-    printf("   ");
+    printf("      |");
     for (int i = 0; i < 3; ++i) {
       printf("\33[0;3%dm#", color(cube, i + j*3 + 4*9));
+      if (i < 2) {
+        printf(" ");
+      }
     }
-    printf("\n");
+    printf("\33[0m|\n");
   }
   for (int j = 0; j < 3; ++j) {
     for (int k = 0; k < 4; ++k) {
+      printf("\33[0m|");
       for (int i = 0; i < 3; ++i) {
         printf("\33[0;3%dm#", color(cube, i + j*3 + k*9));
+        if (i < 2) {
+          printf(" ");
+        }
       }
     }
-    printf("\n");
+    printf("\33[0m|\n");
   }
   for (int j = 0; j < 3; ++j) {
-    printf("   ");
+    printf("      |");
     for (int i = 0; i < 3; ++i) {
       printf("\33[0;3%dm#", color(cube, i + j*3 + 5*9));
+      if (i < 2) {
+        printf(" ");
+      }
     }
-    printf("\n");
+    printf("\33[0m|\n");
   }
 
   printf("\33[0m");
 }
 
 int main() {
+  srand(time(NULL));
   Cube c = {0};
   reset(&c);
-  // c.b ^= 123487987973483ULL;
-  // c.c ^= 2323487987978923ULL;
   printf("Hello, cube!\n");
   render(&c);
-  printf("Turned U\n");
-  turn_U(&c);
-  render(&c);
-  printf("Rotated y\n");
-  rotate_y(&c);
-  render(&c);
-  printf("Rotated x\n");
-  rotate_x(&c);
-  render(&c);
-  printf("Turned F\n");
-  turn_F(&c);
-  render(&c);
-  printf("Rotated Z'\n");
-  rotate_z_prime(&c);
-  render(&c);
+  for (int j = 0; j < 5; ++j) {
+    for (long int i = 0; i < 10000000; ++i) {
+      int r = rand() % 3;
+      if (r == 0) {
+        turn_U_prime(&c);
+      } else if (r == 1) {
+        rotate_y_prime(&c);
+      } else {
+        rotate_x(&c);
+      }
+    }
+    printf("Shuffling...\n");
+    render(&c);
+  }
   printf("Raw:\n");
   render_raw(&c);
   return 0;
