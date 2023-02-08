@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "time.h"
+#include "stdbool.h"
 
 typedef unsigned long long int bitboard;
 
@@ -10,26 +11,31 @@ typedef struct {
   bitboard c;
 } Cube;
 
-/* Reset cube to default solved configuration. */
-void reset(Cube *cube) {
-  cube->a = 0;
-  cube->b = 0;
-  cube->c = 0;
-  for (int j = 0; j < 6; ++j) {
-    for (int i = 0; i < 9; ++i) {
-      bitboard p = 1ULL << (i + j*9);
-      if ((j+1) & 1) {
-        cube->a |= p;
-      }
-      if ((j+1) & 2) {
-        cube->b |= p;
-      }
-      if ((j+1) & 4) {
-        cube->c |= p;
-      }
-    }
-  }
-}
+enum move {
+  I,
+
+  U, U_prime, U2,
+  D, D_prime, D2,
+  R, R_prime, R2,
+  L, L_prime, L2,
+  F, F_prime, F2,
+  B, B_prime, B2,
+
+  u, u_prime, u2,
+  d, d_prime, d2,
+  r, r_prime, r2,
+  l, l_prime, l2,
+  f, f_prime, f2,
+  b, b_prime, b2,
+
+  M, M_prime, M2,
+  E, E_prime, E2,
+  S, S_prime, S2
+};
+
+typedef unsigned __int128 sequence;
+
+const sequence NUM_MOVES = 46;
 
 /* Bitboard masks */
 const bitboard U_BODY_MASK = 7 | (7 << 9) | (7 << 18);
@@ -97,153 +103,63 @@ const bitboard X_MASK = X_0 | X_1 | X_2 | X_3;
 
 /* Face rotations */
 
-static inline void U_face_prime(Cube *cube) {
-  cube->a = (
-    ((cube->a & U_FACE_0) << 6) |
-    ((cube->a & (U_FACE_1 | U_FACE_6)) << 2) |
-    ((cube->a & (U_FACE_2 | U_FACE_7)) >> 2) |
-    ((cube->a & U_FACE_3) << 4) |
-    ((cube->a & U_FACE_5) >> 4) |
-    ((cube->a & U_FACE_8) >> 6) |
-    (cube->a & ~U_FACE)
-  );
-  cube->b = (
-    ((cube->b & U_FACE_0) << 6) |
-    ((cube->b & (U_FACE_1 | U_FACE_6)) << 2) |
-    ((cube->b & (U_FACE_2 | U_FACE_7)) >> 2) |
-    ((cube->b & U_FACE_3) << 4) |
-    ((cube->b & U_FACE_5) >> 4) |
-    ((cube->b & U_FACE_8) >> 6) |
-    (cube->b & ~U_FACE)
-  );
-  cube->c = (
-    ((cube->c & U_FACE_0) << 6) |
-    ((cube->c & (U_FACE_1 | U_FACE_6)) << 2) |
-    ((cube->c & (U_FACE_2 | U_FACE_7)) >> 2) |
-    ((cube->c & U_FACE_3) << 4) |
-    ((cube->c & U_FACE_5) >> 4) |
-    ((cube->c & U_FACE_8) >> 6) |
-    (cube->c & ~U_FACE)
+inline bitboard U_face_prime(bitboard component) {
+  return (
+    ((component & U_FACE_0) << 6) |
+    ((component & (U_FACE_1 | U_FACE_6)) << 2) |
+    ((component & (U_FACE_2 | U_FACE_7)) >> 2) |
+    ((component & U_FACE_3) << 4) |
+    ((component & U_FACE_5) >> 4) |
+    ((component & U_FACE_8) >> 6) |
+    (component & ~U_FACE)
   );
 }
 
-static inline void D_face(Cube *cube) {
-  cube->a = (
-    ((cube->a & (D_FACE_0 | D_FACE_5)) << 2) |
-    ((cube->a & D_FACE_1) << 4) |
-    ((cube->a & D_FACE_2) << 6) |
-    ((cube->a & (D_FACE_3 | D_FACE_8)) >> 2) |
-    ((cube->a & D_FACE_6) >> 6) |
-    ((cube->a & D_FACE_7) >> 4) |
-    (cube->a & ~D_FACE)
-  );
-  cube->b = (
-    ((cube->b & (D_FACE_0 | D_FACE_5)) << 2) |
-    ((cube->b & D_FACE_1) << 4) |
-    ((cube->b & D_FACE_2) << 6) |
-    ((cube->b & (D_FACE_3 | D_FACE_8)) >> 2) |
-    ((cube->b & D_FACE_6) >> 6) |
-    ((cube->b & D_FACE_7) >> 4) |
-    (cube->b & ~D_FACE)
-  );
-  cube->c = (
-    ((cube->c & (D_FACE_0 | D_FACE_5)) << 2) |
-    ((cube->c & D_FACE_1) << 4) |
-    ((cube->c & D_FACE_2) << 6) |
-    ((cube->c & (D_FACE_3 | D_FACE_8)) >> 2) |
-    ((cube->c & D_FACE_6) >> 6) |
-    ((cube->c & D_FACE_7) >> 4) |
-    (cube->c & ~D_FACE)
+inline bitboard D_face(bitboard component) {
+  return (
+    ((component & (D_FACE_0 | D_FACE_5)) << 2) |
+    ((component & D_FACE_1) << 4) |
+    ((component & D_FACE_2) << 6) |
+    ((component & (D_FACE_3 | D_FACE_8)) >> 2) |
+    ((component & D_FACE_6) >> 6) |
+    ((component & D_FACE_7) >> 4) |
+    (component & ~D_FACE)
   );
 }
 
-static inline void B_face(Cube *cube) {
-  cube->a = (
-    ((cube->a & (B_FACE_0 | B_FACE_5)) << 2) |
-    ((cube->a & B_FACE_1) << 4) |
-    ((cube->a & B_FACE_2) << 6) |
-    ((cube->a & (B_FACE_3 | B_FACE_8)) >> 2) |
-    ((cube->a & B_FACE_6) >> 6) |
-    ((cube->a & B_FACE_7) >> 4) |
-    (cube->a & ~B_FACE)
-  );
-  cube->b = (
-    ((cube->b & (B_FACE_0 | B_FACE_5)) << 2) |
-    ((cube->b & B_FACE_1) << 4) |
-    ((cube->b & B_FACE_2) << 6) |
-    ((cube->b & (B_FACE_3 | B_FACE_8)) >> 2) |
-    ((cube->b & B_FACE_6) >> 6) |
-    ((cube->b & B_FACE_7) >> 4) |
-    (cube->b & ~B_FACE)
-  );
-  cube->c = (
-    ((cube->c & (B_FACE_0 | B_FACE_5)) << 2) |
-    ((cube->c & B_FACE_1) << 4) |
-    ((cube->c & B_FACE_2) << 6) |
-    ((cube->c & (B_FACE_3 | B_FACE_8)) >> 2) |
-    ((cube->c & B_FACE_6) >> 6) |
-    ((cube->c & B_FACE_7) >> 4) |
-    (cube->c & ~B_FACE)
+inline bitboard B_face(bitboard component) {
+  return (
+    ((component & (B_FACE_0 | B_FACE_5)) << 2) |
+    ((component & B_FACE_1) << 4) |
+    ((component & B_FACE_2) << 6) |
+    ((component & (B_FACE_3 | B_FACE_8)) >> 2) |
+    ((component & B_FACE_6) >> 6) |
+    ((component & B_FACE_7) >> 4) |
+    (component & ~B_FACE)
   );
 }
 
-static inline void R_face(Cube *cube) {
-  cube->a = (
-    ((cube->a & (R_FACE_0 | R_FACE_5)) << 2) |
-    ((cube->a & R_FACE_1) << 4) |
-    ((cube->a & R_FACE_2) << 6) |
-    ((cube->a & (R_FACE_3 | R_FACE_8)) >> 2) |
-    ((cube->a & R_FACE_6) >> 6) |
-    ((cube->a & R_FACE_7) >> 4) |
-    (cube->a & ~R_FACE)
-  );
-  cube->b = (
-    ((cube->b & (R_FACE_0 | R_FACE_5)) << 2) |
-    ((cube->b & R_FACE_1) << 4) |
-    ((cube->b & R_FACE_2) << 6) |
-    ((cube->b & (R_FACE_3 | R_FACE_8)) >> 2) |
-    ((cube->b & R_FACE_6) >> 6) |
-    ((cube->b & R_FACE_7) >> 4) |
-    (cube->b & ~R_FACE)
-  );
-  cube->c = (
-    ((cube->c & (R_FACE_0 | R_FACE_5)) << 2) |
-    ((cube->c & R_FACE_1) << 4) |
-    ((cube->c & R_FACE_2) << 6) |
-    ((cube->c & (R_FACE_3 | R_FACE_8)) >> 2) |
-    ((cube->c & R_FACE_6) >> 6) |
-    ((cube->c & R_FACE_7) >> 4) |
-    (cube->c & ~R_FACE)
+inline bitboard R_face(bitboard component) {
+  return (
+    ((component & (R_FACE_0 | R_FACE_5)) << 2) |
+    ((component & R_FACE_1) << 4) |
+    ((component & R_FACE_2) << 6) |
+    ((component & (R_FACE_3 | R_FACE_8)) >> 2) |
+    ((component & R_FACE_6) >> 6) |
+    ((component & R_FACE_7) >> 4) |
+    (component & ~R_FACE)
   );
 }
 
-static inline void L_face_prime(Cube *cube) {
-  cube->a = (
-    ((cube->a & L_FACE_0) << 6) |
-    ((cube->a & (L_FACE_1 | L_FACE_6)) << 2) |
-    ((cube->a & (L_FACE_2 | L_FACE_7)) >> 2) |
-    ((cube->a & L_FACE_3) << 4) |
-    ((cube->a & L_FACE_5) >> 4) |
-    ((cube->a & L_FACE_8) >> 6) |
-    (cube->a & ~L_FACE)
-  );
-  cube->b = (
-    ((cube->b & L_FACE_0) << 6) |
-    ((cube->b & (L_FACE_1 | L_FACE_6)) << 2) |
-    ((cube->b & (L_FACE_2 | L_FACE_7)) >> 2) |
-    ((cube->b & L_FACE_3) << 4) |
-    ((cube->b & L_FACE_5) >> 4) |
-    ((cube->b & L_FACE_8) >> 6) |
-    (cube->b & ~L_FACE)
-  );
-  cube->c = (
-    ((cube->c & L_FACE_0) << 6) |
-    ((cube->c & (L_FACE_1 | L_FACE_6)) << 2) |
-    ((cube->c & (L_FACE_2 | L_FACE_7)) >> 2) |
-    ((cube->c & L_FACE_3) << 4) |
-    ((cube->c & L_FACE_5) >> 4) |
-    ((cube->c & L_FACE_8) >> 6) |
-    (cube->c & ~L_FACE)
+inline bitboard L_face_prime(bitboard component) {
+  return (
+    ((component & L_FACE_0) << 6) |
+    ((component & (L_FACE_1 | L_FACE_6)) << 2) |
+    ((component & (L_FACE_2 | L_FACE_7)) >> 2) |
+    ((component & L_FACE_3) << 4) |
+    ((component & L_FACE_5) >> 4) |
+    ((component & L_FACE_8) >> 6) |
+    (component & ~L_FACE)
   );
 }
 
@@ -256,8 +172,12 @@ void turn_U_prime(Cube *cube) {
   cube->c = ((cube->c & U_BODY_MASK) << 9) | ((cube->c & U_TAIL_MASK) >> 27) | (cube->c & ~U_MASK);
 
   // Face
-  U_face_prime(cube);
+  cube->a = U_face_prime(cube->a);
+  cube->b = U_face_prime(cube->b);
+  cube->c = U_face_prime(cube->c);
 }
+
+// TODO: Elementary turn_R
 
 void rotate_y_prime(Cube *cube) {
   // Permute side faces
@@ -266,32 +186,47 @@ void rotate_y_prime(Cube *cube) {
   cube->c = ((cube->c & Y_BODY_MASK) << 9) | ((cube->c & Y_TAIL_MASK) >> 27) | (cube->c & ~Y_MASK);
 
   // Rotate top face
-  U_face_prime(cube);
+  cube->a = U_face_prime(cube->a);
+  cube->b = U_face_prime(cube->b);
+  cube->c = U_face_prime(cube->c);
   // Rotate bottom face
-  D_face(cube);
+  cube->a = D_face(cube->a);
+  cube->b = D_face(cube->b);
+  cube->c = D_face(cube->c);
 }
 
 void rotate_x(Cube *cube) {
   // Re-orient faces for wrapping
-  U_face_prime(cube);
-  U_face_prime(cube);
-  B_face(cube);
-  B_face(cube);
+  cube->a = U_face_prime(U_face_prime(cube->a));
+  cube->b = U_face_prime(U_face_prime(cube->b));
+  cube->c = U_face_prime(U_face_prime(cube->c));
+  cube->a = B_face(B_face(cube->a));
+  cube->b = B_face(B_face(cube->b));
+  cube->c = B_face(B_face(cube->c));
   // Permute ring faces
   cube->a = ((cube->a & X_1) << (3*9)) | ((cube->a & X_2) >> (4*9)) | ((cube->a & X_3) << (2*9)) | ((cube->a & X_0) >> 9) | (cube->a & ~X_MASK);
   cube->b = ((cube->b & X_1) << (3*9)) | ((cube->b & X_2) >> (4*9)) | ((cube->b & X_3) << (2*9)) | ((cube->b & X_0) >> 9) | (cube->b & ~X_MASK);
   cube->c = ((cube->c & X_1) << (3*9)) | ((cube->c & X_2) >> (4*9)) | ((cube->c & X_3) << (2*9)) | ((cube->c & X_0) >> 9) | (cube->c & ~X_MASK);
 
   // Rotate right face
-  R_face(cube);
+  cube->a = R_face(cube->a);
+  cube->b = R_face(cube->b);
+  cube->c = R_face(cube->c);
   // Rotate left face
-  L_face_prime(cube);
+  cube->a = L_face_prime(cube->a);
+  cube->b = L_face_prime(cube->b);
+  cube->c = L_face_prime(cube->c);
 }
 
 /* Unoptimized basic operations */
 
 void turn_U(Cube *cube) {
   turn_U_prime(cube);
+  turn_U_prime(cube);
+  turn_U_prime(cube);
+}
+
+void turn_U2(Cube *cube) {
   turn_U_prime(cube);
   turn_U_prime(cube);
 }
@@ -332,50 +267,160 @@ void turn_F_prime(Cube *cube) {
   rotate_x_prime(cube);
 }
 
-// TODO:
-/*
-turn_D
-turn_D_prime
-turn_R
-turn_R_prime
-turn_L
-turn_L_prime
-turn_B
-turn_B_prime
+void turn_F2(Cube *cube) {
+  rotate_x(cube);
+  turn_U2(cube);
+  rotate_x_prime(cube);
+}
 
-turn_U2
-turn_D2
-turn_R2
-turn_L2
-turn_F2
-turn_B2
+void turn_R(Cube *cube) {
+  rotate_z_prime(cube);
+  turn_U(cube);
+  rotate_z(cube);
+}
 
-turn_u
-turn_u_prime
-turn_d
-turn_d_prime
-turn_r
-turn_r_prime
-turn_l
-turn_l_prime
-turn_f
-turn_f_prime
-turn_b
-turn_b_prime
+void turn_R_prime(Cube *cube) {
+  rotate_z_prime(cube);
+  turn_U_prime(cube);
+  rotate_z(cube);
+}
+void turn_R2(Cube *cube) {
+  rotate_z_prime(cube);
+  turn_U2(cube);
+  rotate_z(cube);
+}
 
-slice_M
-slice_M_prime
-slice_M2
-slice_E
-slice_E_prime
-slice_E2
-slice_S
-slice_S_prime
-slice_S2
-*/
 
-/* Helpers */
+void apply(Cube *cube, enum move move) {
+  switch (move) {
+  case U:
+    turn_U(cube);
+    break;
+  case U_prime:
+    turn_U_prime(cube);
+    break;
+  case U2:
+    turn_U2(cube);
+    break;
+  case R:
+    turn_R(cube);
+    break;
+  case R_prime:
+    turn_R_prime(cube);
+    break;
+  case R2:
+    turn_R2(cube);
+    break;
+  case F:
+    turn_F(cube);
+    break;
+  case F_prime:
+    turn_F_prime(cube);
+    break;
+  case F2:
+    turn_F2(cube);
+    break;
+  // TODO: Rest
+  }
+}
 
+/* Utilities */
+
+/* Reset cube to default solved configuration. */
+void reset(Cube *cube) {
+  cube->a = 0;
+  cube->b = 0;
+  cube->c = 0;
+  for (int j = 0; j < 6; ++j) {
+    for (int i = 0; i < 9; ++i) {
+      bitboard p = 1ULL << (i + j*9);
+      if ((j+1) & 1) {
+        cube->a |= p;
+      }
+      if ((j+1) & 2) {
+        cube->b |= p;
+      }
+      if ((j+1) & 4) {
+        cube->c |= p;
+      }
+    }
+  }
+}
+
+/* Returns true if only the top layer is scrambled. */
+bool is_top_layer(Cube *cube) {
+  int q;
+  bitboard a, b, c;
+  for (int k = 0; k < 4; ++k) {
+    q = 9*k + 3;
+    a = (cube->a >> q) & 1;
+    b = (cube->b >> q) & 1;
+    c = (cube->c >> q) & 1;
+    for (int i = 4; i < 9; ++i) {
+      q = 9*k + i;
+      if (((cube->a >> q) & 1) != a) {
+        return false;
+      }
+      if (((cube->b >> q) & 1) != b) {
+        return false;
+      }
+      if (((cube->c >> q) & 1) != c) {
+        return false;
+      }
+    }
+  }
+  q = 9*5;
+  a = (cube->a >> q) & 1;
+  b = (cube->b >> q) & 1;
+  c = (cube->c >> q) & 1;
+  for (int i = 1; i < 9; ++i) {
+    q = 9*5 + i;
+    if (((cube->a >> q) & 1) != a) {
+      return false;
+    }
+    if (((cube->b >> q) & 1) != b) {
+      return false;
+    }
+    if (((cube->c >> q) & 1) != c) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool is_last_layer(Cube *cube) {
+  if (is_top_layer(cube)) {
+    return true;
+  }
+
+  Cube clone = *cube;
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+
+  rotate_y_prime(&clone);
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  rotate_x(&clone);
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  return false;
+}
+
+// TODO: Standard colors
 int color(Cube *cube, int index) {
   bitboard p = 1ULL << index;
   return !!(cube->a & p) + 2 * !!(cube->b & p) + 4 * !!(cube->c & p);
@@ -432,27 +477,91 @@ void render(Cube *cube) {
   printf("\33[0m");
 }
 
+void print_sequence(sequence seq) {
+  sequence reversed = 0;
+  for (int i = 0; i < 23; ++i) {
+    reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  seq = reversed;
+  for (int i = 0; i < 23; ++i) {
+    switch (seq % NUM_MOVES) {
+      case U:
+        printf("U");
+        break;
+      case U_prime:
+        printf("U'");
+        break;
+      case U2:
+        printf("U2");
+        break;
+      case R:
+        printf("R");
+        break;
+      case R_prime:
+        printf("R'");
+        break;
+      case R2:
+        printf("R2");
+        break;
+      case F:
+        printf("F");
+        break;
+      case F_prime:
+        printf("F'");
+        break;
+      case F2:
+        printf("F2");
+        break;
+      // TODO: Rest
+    }
+    seq /= NUM_MOVES;
+  }
+  printf("\n");
+}
+
+bool equals(Cube *a, Cube *b) {
+  return a->a == b->a && a->b == b->b && a->c == b->c;
+}
+
+void explore(Cube cube, sequence seq, int depth) {
+  if (depth < 0) {
+    return;
+  }
+  // TODO: Show non-trivial PLL as well
+  if (is_top_layer(&cube) && (((cube.a & U_FACE) != U_FACE) || ((cube.b & U_FACE) != 0) || ((cube.c & U_FACE) != U_FACE))) {
+    printf("Found something: ");
+    print_sequence(seq);
+    render(&cube);
+  }
+  for (int i = U; i <= U2; ++i) {
+    Cube variant = cube;
+    sequence var_seq = NUM_MOVES * seq + i;
+    apply(&variant, i);
+    explore(variant, var_seq, depth - 1);
+  }
+
+  for (int i = F; i <= F2; ++i) {
+    Cube variant = cube;
+    sequence var_seq = NUM_MOVES * seq + i;
+    apply(&variant, i);
+    explore(variant, var_seq, depth - 1);
+  }
+
+  for (int i = R; i <= R2; ++i) {
+    Cube variant = cube;
+    sequence var_seq = NUM_MOVES * seq + i;
+    apply(&variant, i);
+    explore(variant, var_seq, depth - 1);
+  }
+}
+
 int main() {
   srand(time(NULL));
-  Cube c = {0};
-  reset(&c);
-  printf("Hello, cube!\n");
-  render(&c);
-  for (int j = 0; j < 5; ++j) {
-    for (long int i = 0; i < 10000000; ++i) {
-      int r = rand() % 3;
-      if (r == 0) {
-        turn_U_prime(&c);
-      } else if (r == 1) {
-        rotate_y_prime(&c);
-      } else {
-        rotate_x(&c);
-      }
-    }
-    printf("Shuffling...\n");
-    render(&c);
-  }
-  printf("Raw:\n");
-  render_raw(&c);
+  Cube cube = {0};
+  reset(&cube);
+
+  explore(cube, 0, 7);
+
   return 0;
 }
