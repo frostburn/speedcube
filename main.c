@@ -420,22 +420,42 @@ bool is_last_layer(Cube *cube) {
   return false;
 }
 
-// TODO: Standard colors
-int color(Cube *cube, int index) {
+const char* color_code(Cube *cube, int index) {
   bitboard p = 1ULL << index;
-  return !!(cube->a & p) + 2 * !!(cube->b & p) + 4 * !!(cube->c & p);
+  bitboard color = !!(cube->a & p) + 2 * !!(cube->b & p) + 4 * !!(cube->c & p);
+  switch (color) {
+    case 0:
+      return "\33[38;5;0m";
+    case 1:
+      return "\33[38;5;1m";
+    case 2:
+      return "\33[38;5;2m";
+    case 3:
+      return "\33[38;5;214m";
+    case 4:
+      return "\33[38;5;4m";
+    case 5:
+      return "\33[38;5;11m";
+    case 6:
+      return "\33[38;5;15m";
+    case 7:
+      return "\33[38;5;13m";
+  }
+  return "\33[38;5;14m";
 }
 
 void render_raw(Cube *cube) {
   for (int j = 0; j < 6; ++j) {
     for (int i = 0; i < 9; ++i) {
-      printf("\33[0;3%dm#", color(cube, i + 9 * j));
+      printf("%s#", color_code(cube, i + 9 * j));
     }
     printf("\n");
   }
   printf("\33[0m");
   for (int i = 6*9; i < 64; ++i) {
-    printf("%d", color(cube, i));
+    bitboard p = 1ULL << i;
+    bitboard color = !!(cube->a & p) + 2 * !!(cube->b & p) + 4 * !!(cube->c & p);
+    printf("%llu", color);
   }
   printf("\n");
 }
@@ -444,7 +464,7 @@ void render(Cube *cube) {
   for (int j = 0; j < 3; ++j) {
     printf("      |");
     for (int i = 0; i < 3; ++i) {
-      printf("\33[0;3%dm#", color(cube, i + j*3 + 4*9));
+      printf("%s#", color_code(cube, i + j*3 + 4*9));
       if (i < 2) {
         printf(" ");
       }
@@ -455,7 +475,7 @@ void render(Cube *cube) {
     for (int k = 0; k < 4; ++k) {
       printf("\33[0m|");
       for (int i = 0; i < 3; ++i) {
-        printf("\33[0;3%dm#", color(cube, i + j*3 + k*9));
+        printf("%s#", color_code(cube, i + j*3 + k*9));
         if (i < 2) {
           printf(" ");
         }
@@ -466,7 +486,7 @@ void render(Cube *cube) {
   for (int j = 0; j < 3; ++j) {
     printf("      |");
     for (int i = 0; i < 3; ++i) {
-      printf("\33[0;3%dm#", color(cube, i + j*3 + 5*9));
+      printf("%s#", color_code(cube, i + j*3 + 5*9));
       if (i < 2) {
         printf(" ");
       }
