@@ -987,32 +987,43 @@ void fill_subgroup(Database *database, Cube *cube, sequence *sequences, size_t n
   }
 }
 
-/* Database has scrambles not solutions. */
-sequence solve(Database *database, Cube *cube, size_t radius) {
-  Cube *scramble = get(database->root, cube);
-  if (scramble != NULL) {
-    size_t i = scramble - database->cubes;
-    return invert(database->sequences[i]);
+// TODO: Check for solution if the cache is full.
+void update_solution_variants(Database *cache, Cube *cube, sequence seq) {
+  for (sequence m = U; m <= M2; ++m) {
+    Cube variant = *cube;
+    sequence var_seq = NUM_MOVES * seq + m;
+    apply(&variant, m);
+    update(cache, &variant, var_seq);
   }
+}
+
+/* Database has scrambles not solutions. */
+sequence solve(Database *database, Cube *cube, size_t cache_size) {
+  Database cache = init_database(cache_size);
+  size_t low = -1;
+  size_t high = 0;
+  update(&cache, cube, 0);
 
   sequence solution = INVALID;
 
-  if (radius <= 0) {
-    return solution;
+  while (low != high) {
+    low = high;
+    high = cache.size;
+    for (size_t i = low; i < high; ++i) {
+      Cube *scramble = get(database->root, cache.cubes + i);
+      if (scramble != NULL) {
+        size_t index = scramble - database->cubes;
+        sequence candidate = concat(cache.sequences[i], invert(database->sequences[index]));
+        if (candidate < solution) {
+          solution = candidate;
+        }
+      }
+      update_solution_variants(&cache, cache.cubes + i, cache.sequences[i]);
+    }
+    balance(&cache);
   }
 
-  // TODO: Use a local database to eliminate backtracking
-  for (sequence m = U; m <= M2; ++m) {
-    Cube variant = *cube;
-    apply(&variant, m);
-    sequence candidate = solve(database, &variant, radius - 1);
-    if (candidate < INVALID) {
-      candidate = concat(m, candidate);
-      if (candidate < solution) {
-        solution = candidate;
-      }
-    }
-  }
+  free_database(&cache);
 
   return solution;
 }
@@ -1055,7 +1066,7 @@ int main() {
       exit(EXIT_FAILURE);
     }
     if (is_yellow_permutation(subgroup.cubes + i)) {
-      sequence solution = solve(&database, subgroup.cubes + i, 6);
+      sequence solution = solve(&database, subgroup.cubes + i, 200000);
       if (solution != INVALID) {
         num_solutions++;
       }
