@@ -62,6 +62,9 @@ typedef struct {
 const sequence NUM_MOVES = 46;
 const int SEQUENCE_MAX_LENGTH = 23;
 
+const sequence NOTHING = 0;
+const sequence INVALID = ~NOTHING;
+
 /* Bitboard masks */
 const bitboard U_BODY_MASK = 7 | (7 << 9) | (7 << 18);
 const bitboard U_TAIL_MASK = 7 << 27;
@@ -529,6 +532,66 @@ bool is_last_layer(Cube *cube) {
   return false;
 }
 
+/* Returns true if only the top layer is scrambled and the rest is in default position. */
+bool is_yellow_layer(Cube *cube) {
+  int q;
+  bitboard a, b, c;
+  for (int k = 0; k < 4; ++k) {
+    a = (k+1) & 1;
+    b = ((k+1)>>1) & 1;
+    c = ((k+1)>>2) & 1;
+    for (int i = 3; i < 9; ++i) {
+      q = 9*k + i;
+      if (((cube->a >> q) & 1) != a) {
+        return false;
+      }
+      if (((cube->b >> q) & 1) != b) {
+        return false;
+      }
+      if (((cube->c >> q) & 1) != c) {
+        return false;
+      }
+    }
+  }
+  a = 0;
+  b = 1;
+  c = 1;
+  for (int i = 0; i < 9; ++i) {
+    q = 9*5 + i;
+    if (((cube->a >> q) & 1) != a) {
+      return false;
+    }
+    if (((cube->b >> q) & 1) != b) {
+      return false;
+    }
+    if (((cube->c >> q) & 1) != c) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* Returns true if only the top sides are scrambled and the rest is in default position. */
+bool is_yellow_permutation(Cube *cube) {
+  int q;
+  bitboard a = 1;
+  bitboard b = 0;
+  bitboard c = 1;
+  for (int i = 0; i < 9; ++i) {
+    q = 9*4 + i;
+    if (((cube->a >> q) & 1) != a) {
+      return false;
+    }
+    if (((cube->b >> q) & 1) != b) {
+      return false;
+    }
+    if (((cube->c >> q) & 1) != c) {
+      return false;
+    }
+  }
+  return is_yellow_layer(cube);
+}
+
 const char* color_code(Cube *cube, int index) {
   bitboard p = 1ULL << index;
   bitboard color = !!(cube->a & p) + 2 * !!(cube->b & p) + 4 * !!(cube->c & p);
@@ -607,6 +670,10 @@ void render(Cube *cube) {
 }
 
 void print_sequence(sequence seq) {
+  if (seq == INVALID) {
+    printf("<DNF>\n");
+    return;
+  }
   sequence reversed = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
@@ -616,45 +683,45 @@ void print_sequence(sequence seq) {
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     switch (seq % NUM_MOVES) {
       case U:
-        printf("U");
+        printf("U ");
         break;
       case U_prime:
-        printf("U'");
+        printf("U' ");
         break;
       case U2:
-        printf("U2");
+        printf("U2 ");
         break;
       case R:
-        printf("R");
+        printf("R ");
         break;
       case R_prime:
-        printf("R'");
+        printf("R' ");
         break;
       case R2:
-        printf("R2");
+        printf("R2 ");
         break;
       case F:
-        printf("F");
+        printf("F ");
         break;
       case F_prime:
-        printf("F'");
+        printf("F' ");
         break;
       case F2:
-        printf("F2");
+        printf("F2 ");
         break;
       case M:
-        printf("M");
+        printf("M ");
         break;
       case M_prime:
-        printf("M'");
+        printf("M' ");
         break;
       case M2:
-        printf("M2");
+        printf("M2 ");
         break;
       case I:
         break;
       default:
-        printf("?");
+        printf("? ");
         break;
       // TODO: Rest
     }
@@ -859,6 +926,44 @@ sequence concat(sequence a, sequence b) {
   return a;
 }
 
+sequence invert(sequence seq) {
+  sequence result = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    sequence move = seq % NUM_MOVES;
+    switch(move) {
+      case U:
+        move = U_prime;
+        break;
+      case U_prime:
+        move = U;
+        break;
+      case R:
+        move = R_prime;
+        break;
+      case R_prime:
+        move = R;
+        break;
+      case F:
+        move = F_prime;
+        break;
+      case F_prime:
+        move = F;
+        break;
+      case M:
+        move = M_prime;
+        break;
+      case M_prime:
+        move = M;
+        break;
+    }
+    if (move != I) {
+      result = result * NUM_MOVES + move;
+    }
+    seq /= NUM_MOVES;
+  }
+  return result;
+}
+
 void update_subgroup_variants(Database *database, Cube *cube, sequence seq, sequence *sequences, size_t num_sequences) {
   for (size_t i = 0; i < num_sequences; ++i) {
     Cube variant = *cube;
@@ -882,14 +987,44 @@ void fill_subgroup(Database *database, Cube *cube, sequence *sequences, size_t n
   }
 }
 
+/* Database has scrambles not solutions. */
+sequence solve(Database *database, Cube *cube, size_t radius) {
+  Cube *scramble = get(database->root, cube);
+  if (scramble != NULL) {
+    size_t i = scramble - database->cubes;
+    return invert(database->sequences[i]);
+  }
+
+  sequence solution = INVALID;
+
+  if (radius <= 0) {
+    return solution;
+  }
+
+  // TODO: Use a local database to eliminate backtracking
+  for (sequence m = U; m <= M2; ++m) {
+    Cube variant = *cube;
+    apply(&variant, m);
+    sequence candidate = solve(database, &variant, radius - 1);
+    if (candidate < INVALID) {
+      candidate = concat(m, candidate);
+      if (candidate < solution) {
+        solution = candidate;
+      }
+    }
+  }
+
+  return solution;
+}
+
 int main() {
   srand(time(NULL));
   Cube cube = {0};
   reset(&cube);
 
   // Database database = init_database(60000000);  // Around 6% memory during filling
-  printf("Searching for top layer sequences...\n");
-  Database database = init_database(1000000);
+  printf("Searching for yellow layer sequences...\n");
+  Database database = init_database(10000000);
 
   fill_database(&database, &cube);
 
@@ -897,38 +1032,44 @@ int main() {
   size_t num_sequences = 0;
 
   for (size_t i = 0; i < database.size; ++i) {
-    if (is_top_layer(database.cubes + i)) {
+    if (is_yellow_layer(database.cubes + i)) {
       sequences[num_sequences] = database.sequences[i];
       num_sequences++;
     }
   }
 
   printf("Found %zu\n", num_sequences);
-  free_database(&database);
 
-  printf("Using combinations to fill the whole top layer subgroup...\n");
-  database = init_database(1000000);
+  printf("Using combinations to fill the whole yellow layer subgroup...\n");
+  Database subgroup = init_database(100000);
 
-  fill_subgroup(&database, &cube, sequences, num_sequences);
+  fill_subgroup(&subgroup, &cube, sequences, num_sequences);
 
   size_t num_permutations = 0;
+  size_t num_solutions = 0;
 
-  for (size_t i = 0; i < database.size; ++i) {
-    if (!is_top_layer(database.cubes + i)) {
+  for (size_t i = 0; i < subgroup.size; ++i) {
+    if (!is_yellow_layer(subgroup.cubes + i)) {
       fprintf(stderr, "Inconsistent element found\n");
+      render(subgroup.cubes + i);
       exit(EXIT_FAILURE);
     }
-    if (is_top_permutation(database.cubes + i)) {
-      print_sequence(database.sequences[i]);
-      render(database.cubes + i);
+    if (is_yellow_permutation(subgroup.cubes + i)) {
+      sequence solution = solve(&database, subgroup.cubes + i, 6);
+      if (solution != INVALID) {
+        num_solutions++;
+      }
+      print_sequence(solution);
+      render(subgroup.cubes + i);
       num_permutations++;
     }
   }
 
-  printf("Done with %zu elements of which %zu are permutations.\n", database.size, num_permutations);
+  printf("Done with %zu elements of which %zu are permutations. Solved %zu of them.\n", subgroup.size, num_permutations, num_solutions);
 
   free_database(&database);
+  free_database(&subgroup);
   free(sequences);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
