@@ -60,6 +60,7 @@ typedef struct {
 } Database;
 
 const sequence NUM_MOVES = 46;
+const int SEQUENCE_MAX_LENGTH = 23;
 
 /* Bitboard masks */
 const bitboard U_BODY_MASK = 7 | (7 << 9) | (7 << 18);
@@ -353,43 +354,61 @@ void slice_M2(Cube *cube) {
 
 void apply(Cube *cube, enum move move) {
   switch (move) {
-  case U:
-    turn_U(cube);
-    break;
-  case U_prime:
-    turn_U_prime(cube);
-    break;
-  case U2:
-    turn_U2(cube);
-    break;
-  case R:
-    turn_R(cube);
-    break;
-  case R_prime:
-    turn_R_prime(cube);
-    break;
-  case R2:
-    turn_R2(cube);
-    break;
-  case F:
-    turn_F(cube);
-    break;
-  case F_prime:
-    turn_F_prime(cube);
-    break;
-  case F2:
-    turn_F2(cube);
-    break;
-  case M:
-    slice_M(cube);
-    break;
-  case M_prime:
-    slice_M_prime(cube);
-    break;
-  case M2:
-    slice_M2(cube);
-    break;
-  // TODO: Rest
+    case I:
+      break;
+    case U:
+      turn_U(cube);
+      break;
+    case U_prime:
+      turn_U_prime(cube);
+      break;
+    case U2:
+      turn_U2(cube);
+      break;
+    case R:
+      turn_R(cube);
+      break;
+    case R_prime:
+      turn_R_prime(cube);
+      break;
+    case R2:
+      turn_R2(cube);
+      break;
+    case F:
+      turn_F(cube);
+      break;
+    case F_prime:
+      turn_F_prime(cube);
+      break;
+    case F2:
+      turn_F2(cube);
+      break;
+    case M:
+      slice_M(cube);
+      break;
+    case M_prime:
+      slice_M_prime(cube);
+      break;
+    case M2:
+      slice_M2(cube);
+      break;
+    // TODO: Rest
+    default:
+      fprintf(stderr, "Unimplemented move\n");
+      exit(EXIT_FAILURE);
+  }
+}
+
+void apply_sequence(Cube *cube, sequence seq) {
+  sequence reversed = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  seq = reversed;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    apply(cube, seq % NUM_MOVES);
+    seq /= NUM_MOVES;
   }
 }
 
@@ -589,12 +608,12 @@ void render(Cube *cube) {
 
 void print_sequence(sequence seq) {
   sequence reversed = 0;
-  for (int i = 0; i < 23; ++i) {
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
     seq /= NUM_MOVES;
   }
   seq = reversed;
-  for (int i = 0; i < 23; ++i) {
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     switch (seq % NUM_MOVES) {
       case U:
         printf("U");
@@ -631,6 +650,11 @@ void print_sequence(sequence seq) {
         break;
       case M2:
         printf("M2");
+        break;
+      case I:
+        break;
+      default:
+        printf("?");
         break;
       // TODO: Rest
     }
@@ -818,24 +842,93 @@ void fill_database(Database *database, Cube *cube) {
   }
 }
 
+sequence concat(sequence a, sequence b) {
+  sequence reversed = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    reversed = reversed * NUM_MOVES + b % NUM_MOVES;
+    b /= NUM_MOVES;
+  }
+  b = reversed;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    sequence move = b % NUM_MOVES;
+    if (move != I) {
+      a = a * NUM_MOVES + move;
+    }
+    b /= NUM_MOVES;
+  }
+  return a;
+}
+
+void update_subgroup_variants(Database *database, Cube *cube, sequence seq, sequence *sequences, size_t num_sequences) {
+  for (size_t i = 0; i < num_sequences; ++i) {
+    Cube variant = *cube;
+    sequence var_seq = concat(seq, sequences[i]);
+    apply_sequence(&variant, sequences[i]);
+    update(database, &variant, var_seq);
+  }
+}
+
+void fill_subgroup(Database *database, Cube *cube, sequence *sequences, size_t num_sequences) {
+  size_t low = -1;
+  size_t high = 0;
+  update(database, cube, 0);
+  while (low != high) {
+    low = high;
+    high = database->size;
+    for (size_t i = low; i < high; ++i) {
+      update_subgroup_variants(database, database->cubes + i, database->sequences[i], sequences, num_sequences);
+    }
+    balance(database);
+  }
+}
+
 int main() {
   srand(time(NULL));
   Cube cube = {0};
   reset(&cube);
 
   // Database database = init_database(60000000);  // Around 6% memory during filling
+  printf("Searching for top layer sequences...\n");
   Database database = init_database(1000000);
 
   fill_database(&database, &cube);
 
+  sequence *sequences = malloc(1000 * sizeof(sequence));
+  size_t num_sequences = 0;
+
   for (size_t i = 0; i < database.size; ++i) {
     if (is_top_layer(database.cubes + i)) {
-      print_sequence(database.sequences[i]);
-      render(database.cubes + i);
+      sequences[num_sequences] = database.sequences[i];
+      num_sequences++;
     }
   }
 
+  printf("Found %zu\n", num_sequences);
   free_database(&database);
+
+  printf("Using combinations to fill the whole top layer subgroup...\n");
+  database = init_database(1000000);
+
+  fill_subgroup(&database, &cube, sequences, num_sequences);
+
+  size_t num_permutations = 0;
+
+  for (size_t i = 0; i < database.size; ++i) {
+    if (!is_top_layer(database.cubes + i)) {
+      fprintf(stderr, "Inconsistent element found\n");
+      exit(EXIT_FAILURE);
+    }
+    if (is_top_permutation(database.cubes + i)) {
+      print_sequence(database.sequences[i]);
+      render(database.cubes + i);
+      num_permutations++;
+    }
+  }
+
+  printf("Done with %zu elements of which %zu are permutations.\n", database.size, num_permutations);
+
+  free_database(&database);
+  free(sequences);
 
   return 0;
 }
