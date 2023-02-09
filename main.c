@@ -987,15 +987,6 @@ void fill_subgroup(Database *database, Cube *cube, sequence *sequences, size_t n
   }
 }
 
-// TODO: Check for solution if the cache is full.
-void update_solution_variants(Database *cache, Cube *cube, sequence seq) {
-  for (sequence m = U; m <= M2; ++m) {
-    Cube variant = *cube;
-    sequence var_seq = NUM_MOVES * seq + m;
-    apply(&variant, m);
-    update(cache, &variant, var_seq);
-  }
-}
 
 /* Database has scrambles not solutions. */
 sequence solve(Database *database, Cube *cube, size_t cache_size) {
@@ -1006,7 +997,7 @@ sequence solve(Database *database, Cube *cube, size_t cache_size) {
 
   sequence solution = INVALID;
 
-  while (low != high) {
+  while (low != high && solution == INVALID) {
     low = high;
     high = cache.size;
     for (size_t i = low; i < high; ++i) {
@@ -1018,7 +1009,23 @@ sequence solve(Database *database, Cube *cube, size_t cache_size) {
           solution = candidate;
         }
       }
-      update_solution_variants(&cache, cache.cubes + i, cache.sequences[i]);
+      for (sequence m = U; m <= M2; ++m) {
+        Cube variant = cache.cubes[i];
+        sequence var_seq = NUM_MOVES * cache.sequences[i] + m;
+        apply(&variant, m);
+        if (cache.size < cache.max_size) {
+          update(&cache, &variant, var_seq);
+        } else {
+          scramble = get(database->root, &variant);
+          if (scramble != NULL) {
+            size_t index = scramble - database->cubes;
+            sequence candidate = concat(var_seq, invert(database->sequences[index]));
+            if (candidate < solution) {
+              solution = candidate;
+            }
+          }
+        }
+      }
     }
     balance(&cache);
   }
@@ -1066,12 +1073,14 @@ int main() {
       exit(EXIT_FAILURE);
     }
     if (is_yellow_permutation(subgroup.cubes + i)) {
-      sequence solution = solve(&database, subgroup.cubes + i, 200000);
+      sequence solution = solve(&database, subgroup.cubes + i, 1000000);
       if (solution != INVALID) {
         num_solutions++;
       }
       print_sequence(solution);
-      render(subgroup.cubes + i);
+      Cube front_view = subgroup.cubes[i];
+      rotate_x_prime(&front_view);
+      render(&front_view);
       num_permutations++;
     }
   }
