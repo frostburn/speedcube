@@ -11,29 +11,53 @@ typedef struct {
   bitboard c;
 } Cube;
 
+// In priority order
 enum move {
   I,
 
-  U, U_prime, U2,
+  U, U_prime,
+  R, R_prime,
+  F, F_prime,
+
+  M, M_prime,
+
+  U2, R2, F2,
+  M2,
+
+  f, f_prime, f2,
+
   D, D_prime, D2,
-  R, R_prime, R2,
+
   L, L_prime, L2,
-  F, F_prime, F2,
   B, B_prime, B2,
+
+  E, E_prime, E2,
 
   u, u_prime, u2,
   d, d_prime, d2,
   r, r_prime, r2,
   l, l_prime, l2,
-  f, f_prime, f2,
   b, b_prime, b2,
 
-  M, M_prime, M2,
-  E, E_prime, E2,
   S, S_prime, S2
 };
 
 typedef unsigned __int128 sequence;
+
+typedef struct Node {
+  Cube *cube;
+  struct Node *left;
+  struct Node *right;
+} Node;
+
+typedef struct {
+  Cube *cubes;
+  sequence *sequences;
+  Node *nodes;
+  Node *root;
+  size_t size;
+  size_t max_size;
+} Database;
 
 const sequence NUM_MOVES = 46;
 
@@ -50,6 +74,10 @@ const bitboard U_FACE_6 = 1ULL << (4*9 + 6);
 const bitboard U_FACE_7 = 1ULL << (4*9 + 7);
 const bitboard U_FACE_8 = 1ULL << (4*9 + 8);
 const bitboard U_FACE = U_FACE_0 | U_FACE_1 | U_FACE_2 | U_FACE_3 | U_FACE_5 | U_FACE_6 | U_FACE_7 | U_FACE_8;
+
+const bitboard E_BODY_MASK = 56 | (56 << 9) | (56 << 18);
+const bitboard E_TAIL_MASK = 56ULL << 27;
+const bitboard E_MASK = E_BODY_MASK | E_TAIL_MASK;
 
 const bitboard D_FACE_0 = 1ULL << (5*9);
 const bitboard D_FACE_1 = 1ULL << (5*9 + 1);
@@ -103,7 +131,7 @@ const bitboard X_MASK = X_0 | X_1 | X_2 | X_3;
 
 /* Face rotations */
 
-inline bitboard U_face_prime(bitboard component) {
+static inline bitboard U_face_prime(bitboard component) {
   return (
     ((component & U_FACE_0) << 6) |
     ((component & (U_FACE_1 | U_FACE_6)) << 2) |
@@ -115,7 +143,7 @@ inline bitboard U_face_prime(bitboard component) {
   );
 }
 
-inline bitboard D_face(bitboard component) {
+static inline bitboard D_face(bitboard component) {
   return (
     ((component & (D_FACE_0 | D_FACE_5)) << 2) |
     ((component & D_FACE_1) << 4) |
@@ -127,7 +155,7 @@ inline bitboard D_face(bitboard component) {
   );
 }
 
-inline bitboard B_face(bitboard component) {
+static inline bitboard B_face(bitboard component) {
   return (
     ((component & (B_FACE_0 | B_FACE_5)) << 2) |
     ((component & B_FACE_1) << 4) |
@@ -139,7 +167,7 @@ inline bitboard B_face(bitboard component) {
   );
 }
 
-inline bitboard R_face(bitboard component) {
+static inline bitboard R_face(bitboard component) {
   return (
     ((component & (R_FACE_0 | R_FACE_5)) << 2) |
     ((component & R_FACE_1) << 4) |
@@ -151,7 +179,7 @@ inline bitboard R_face(bitboard component) {
   );
 }
 
-inline bitboard L_face_prime(bitboard component) {
+static inline bitboard L_face_prime(bitboard component) {
   return (
     ((component & L_FACE_0) << 6) |
     ((component & (L_FACE_1 | L_FACE_6)) << 2) |
@@ -177,7 +205,13 @@ void turn_U_prime(Cube *cube) {
   cube->c = U_face_prime(cube->c);
 }
 
-// TODO: Elementary turn_R
+void slice_E(Cube *cube) {
+  cube->a = ((cube->a & E_BODY_MASK) << 9) | ((cube->a & E_TAIL_MASK) >> 27) | (cube->a & ~E_MASK);
+  cube->b = ((cube->b & E_BODY_MASK) << 9) | ((cube->b & E_TAIL_MASK) >> 27) | (cube->b & ~E_MASK);
+  cube->c = ((cube->c & E_BODY_MASK) << 9) | ((cube->c & E_TAIL_MASK) >> 27) | (cube->c & ~E_MASK);
+}
+
+// TODO: Elementary turn_R and slice_M
 
 void rotate_y_prime(Cube *cube) {
   // Permute side faces
@@ -290,6 +324,32 @@ void turn_R2(Cube *cube) {
   rotate_z(cube);
 }
 
+void slice_E_prime(Cube *cube) {
+  slice_E(cube);
+  slice_E(cube);
+  slice_E(cube);
+}
+void slice_E2(Cube *cube) {
+  slice_E(cube);
+  slice_E(cube);
+}
+
+void slice_M(Cube *cube) {
+  rotate_z(cube);
+  slice_E_prime(cube);
+  rotate_z_prime(cube);
+}
+void slice_M_prime(Cube *cube) {
+  rotate_z(cube);
+  slice_E(cube);
+  rotate_z_prime(cube);
+}
+void slice_M2(Cube *cube) {
+  rotate_z(cube);
+  slice_E2(cube);
+  rotate_z_prime(cube);
+}
+
 
 void apply(Cube *cube, enum move move) {
   switch (move) {
@@ -319,6 +379,15 @@ void apply(Cube *cube, enum move move) {
     break;
   case F2:
     turn_F2(cube);
+    break;
+  case M:
+    slice_M(cube);
+    break;
+  case M_prime:
+    slice_M_prime(cube);
+    break;
+  case M2:
+    slice_M2(cube);
     break;
   // TODO: Rest
   }
@@ -386,6 +455,27 @@ bool is_top_layer(Cube *cube) {
     }
   }
   return true;
+}
+
+/* Returns true if only the top sides are scrambled. */
+bool is_top_permutation(Cube *cube) {
+  int q = 9*4;
+  bitboard a = (cube->a >> q) & 1;
+  bitboard b = (cube->b >> q) & 1;
+  bitboard c = (cube->c >> q) & 1;
+  for (int i = 1; i < 9; ++i) {
+    q = 9*4 + i;
+    if (((cube->a >> q) & 1) != a) {
+      return false;
+    }
+    if (((cube->b >> q) & 1) != b) {
+      return false;
+    }
+    if (((cube->c >> q) & 1) != c) {
+      return false;
+    }
+  }
+  return is_top_layer(cube);
 }
 
 bool is_last_layer(Cube *cube) {
@@ -533,6 +623,15 @@ void print_sequence(sequence seq) {
       case F2:
         printf("F2");
         break;
+      case M:
+        printf("M");
+        break;
+      case M_prime:
+        printf("M'");
+        break;
+      case M2:
+        printf("M2");
+        break;
       // TODO: Rest
     }
     seq /= NUM_MOVES;
@@ -544,35 +643,178 @@ bool equals(Cube *a, Cube *b) {
   return a->a == b->a && a->b == b->b && a->c == b->c;
 }
 
-void explore(Cube cube, sequence seq, int depth) {
-  if (depth < 0) {
+Database init_database(size_t max_size) {
+  Database result;
+  result.max_size = max_size;
+  result.size = 0;
+  result.cubes = malloc(max_size * sizeof(Cube));
+  result.sequences = malloc(max_size * sizeof(sequence));
+  result.nodes = calloc(max_size, sizeof(Node));
+  result.root = NULL;
+  return result;
+}
+
+void free_database(Database *database) {
+  free(database->cubes);
+  free(database->sequences);
+  free(database->nodes);
+}
+
+int compare(Cube *a, Cube *b) {
+  if (a->c < b->c) {
+    return -1;
+  }
+  if (a->c > b->c) {
+    return 1;
+  }
+  if (a->b < b->b) {
+    return -1;
+  }
+  if (a->b > b->b) {
+    return 1;
+  }
+  if (a->a < b->a) {
+    return -1;
+  }
+  if (a->a > b->a) {
+    return 1;
+  }
+  return 0;
+}
+
+Cube* get(Node *node, Cube *cube) {
+  if (node == NULL) {
+    return NULL;
+  }
+
+  int cmp = compare(cube, node->cube);
+  if (cmp == 0) {
+    return node->cube;
+  } else if (cmp < 0) {
+    return get(node->left, cube);
+  } else {
+    return get(node->right, cube);
+  }
+}
+
+void insert(Node *root, Node *leaf) {
+  int cmp = compare(leaf->cube, root->cube);
+  if (cmp < 0) {
+    if (root->left == NULL) {
+      root->left = leaf;
+    } else {
+      insert(root->left, leaf);
+    }
+    return;
+  } else if (cmp > 0) {
+    if (root->right == NULL) {
+      root->right = leaf;
+    } else {
+      insert(root->right, leaf);
+    }
     return;
   }
-  // TODO: Show non-trivial PLL as well
-  if (is_top_layer(&cube) && (((cube.a & U_FACE) != U_FACE) || ((cube.b & U_FACE) != 0) || ((cube.c & U_FACE) != U_FACE))) {
-    printf("Found something: ");
-    print_sequence(seq);
-    render(&cube);
-  }
-  for (int i = U; i <= U2; ++i) {
-    Cube variant = cube;
-    sequence var_seq = NUM_MOVES * seq + i;
-    apply(&variant, i);
-    explore(variant, var_seq, depth - 1);
-  }
 
-  for (int i = F; i <= F2; ++i) {
-    Cube variant = cube;
-    sequence var_seq = NUM_MOVES * seq + i;
-    apply(&variant, i);
-    explore(variant, var_seq, depth - 1);
-  }
+  fprintf(stderr, "Bad insert\n");
+  exit(EXIT_FAILURE);
+}
 
-  for (int i = R; i <= R2; ++i) {
-    Cube variant = cube;
-    sequence var_seq = NUM_MOVES * seq + i;
-    apply(&variant, i);
-    explore(variant, var_seq, depth - 1);
+bool update(Database *database, Cube *cube, sequence seq) {
+  Cube *existing = get(database->root, cube);
+  if (existing != NULL) {
+    size_t i = existing - database->cubes;
+    if (seq < database->sequences[i]) {
+      database->sequences[i] = seq;
+      return true;
+    }
+    return false;
+  }
+  if (database->size >= database->max_size) {
+    return false;
+  }
+  database->cubes[database->size].a = cube->a;
+  database->cubes[database->size].b = cube->b;
+  database->cubes[database->size].c = cube->c;
+  database->sequences[database->size] = seq;
+  database->nodes[database->size].cube = database->cubes + database->size;
+  if (database->size) {
+    insert(database->root, database->nodes + database->size);
+  } else {
+    database->root = database->nodes;
+    database->root->cube = database->cubes;
+  }
+  database->size++;
+  return true;
+}
+
+size_t height(Node *root) {
+  if (root == NULL) {
+    return 0;
+  }
+  size_t left_height = height(root->left);
+  size_t right_height = height(root->right);
+  if (left_height > right_height) {
+    return left_height + 1;
+  }
+  return right_height + 1;
+}
+
+int cmp_nodes(const void *a, const void *b) {
+  Node *x = (Node*) a;
+  Node *y = (Node*) b;
+  return compare(x->cube, y->cube);
+}
+
+Node* rebuild(Node *nodes, size_t size) {
+  if (!size) {
+    return NULL;
+  }
+  size_t root_index = size / 2;
+  size_t left_index = root_index / 2;
+  size_t right_size = size - root_index - 1;
+  size_t right_index = right_size / 2 + root_index + 1;
+
+  Node *root = nodes + root_index;
+  if (left_index == root_index) {
+    root->left = NULL;
+  } else {
+    root->left = nodes + left_index;
+    rebuild(nodes, root_index);
+  }
+  if (right_index == root_index || right_index >= size) {
+    root->right = NULL;
+  } else {
+    root->right = nodes + right_index;
+    rebuild(nodes + root_index + 1, right_size);
+  }
+  return root;
+}
+
+void balance(Database *database) {
+  qsort(database->nodes, database->size, sizeof(Node), cmp_nodes);
+  database->root = rebuild(database->nodes, database->size);
+}
+
+void update_variants(Database *database, Cube *cube, sequence seq) {
+  for (sequence m = U; m <= M2; ++m) {
+    Cube variant = *cube;
+    sequence var_seq = NUM_MOVES * seq + m;
+    apply(&variant, m);
+    update(database, &variant, var_seq);
+  }
+}
+
+void fill_database(Database *database, Cube *cube) {
+  size_t low = 0;
+  size_t high = 0;
+  update(database, cube, 0);
+  while (database->size < database->max_size) {
+    low = high;
+    high = database->size;
+    for (size_t i = low; i < high; ++i) {
+      update_variants(database, database->cubes + i, database->sequences[i]);
+    }
+    balance(database);
   }
 }
 
@@ -581,7 +823,19 @@ int main() {
   Cube cube = {0};
   reset(&cube);
 
-  explore(cube, 0, 7);
+  // Database database = init_database(60000000);  // Around 6% memory during filling
+  Database database = init_database(1000000);
+
+  fill_database(&database, &cube);
+
+  for (size_t i = 0; i < database.size; ++i) {
+    if (is_top_layer(database.cubes + i)) {
+      print_sequence(database.sequences[i]);
+      render(database.cubes + i);
+    }
+  }
+
+  free_database(&database);
 
   return 0;
 }
