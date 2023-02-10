@@ -121,6 +121,12 @@ int main() {
   assert(cube.b == 15722937740127668ULL);
   assert(cube.c == 17697703721925470ULL);
 
+  cube = test_cube();
+  apply(&cube, M_prime);
+  assert(cube.a == 12001781360536235ULL);
+  assert(cube.b == 15440913008127414ULL);
+  assert(cube.c == 16853139175997406ULL);
+
   // printf("assert(cube.a == %lluULL);\nassert(cube.b == %lluULL);\nassert(cube.c == %lluULL);\n", cube.a, cube.b, cube.c);
   // render(&cube);
 
@@ -144,6 +150,14 @@ int main() {
     assert(cube.b == 15440913008127414ULL);
     assert(cube.c == 16852179250805726ULL);
   }
+
+  sequence seq = from_moves((enum move[]){U, F2, U, M_prime, U2, M, U, F2, I});
+
+  cube = test_cube();
+  apply_sequence(&cube, seq);
+  assert(cube.a == 12009599812411567ULL);
+  assert(cube.b == 15445448493591990ULL);
+  assert(cube.c == 16852179117111263ULL);
 
   printf("All tests pass!\n");
 

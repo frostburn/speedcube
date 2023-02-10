@@ -5,6 +5,18 @@ const int SEQUENCE_MAX_LENGTH = 23;
 const sequence NOTHING = 0;
 const sequence INVALID = ~NOTHING;
 
+sequence from_moves(enum move *moves) {
+  sequence result = 0;
+  for(;;) {
+    enum move m = *moves;
+    if (m == I) {
+      return result;
+    }
+    result = NUM_MOVES * result + m;
+    moves++;
+  }
+}
+
 sequence concat(sequence a, sequence b) {
   sequence reversed = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {

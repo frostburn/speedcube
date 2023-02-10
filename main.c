@@ -233,6 +233,18 @@ void fill_subgroup(Database *database, Cube *cube, sequence *sequences, size_t n
   }
 }
 
+Database generate_yellow_subgroup() {
+  Database database = init_database(20736);
+  sequence sequences[] = {
+    U,
+    from_moves((enum move[]){F, R, U, R_prime, U_prime, F_prime, I}),
+  };
+  Cube cube;
+  reset(&cube);
+  fill_subgroup(&database, &cube, sequences, 2);
+  return database;
+}
+
 sequence solve_cacheless(Database *database, Cube *cube, sequence seq, size_t depth) {
   Cube *scramble = get(database->root, cube);
   if (scramble != NULL) {
@@ -297,33 +309,20 @@ sequence solve(Database *database, Cube *cube, size_t cache_size, size_t depth) 
 }
 
 void solve_pll(size_t database_size, size_t cache_size, size_t depth) {
-  Cube cube = {0};
-  reset(&cube);
+  printf("Generating yellow subgroup...\n");
+  Database subgroup = generate_yellow_subgroup();
 
-  printf("Searching for yellow layer sequences...\n");
+  printf("Generating scramble database...\n");
+  Cube cube;
+  reset(&cube);
   Database database = init_database(database_size);
 
   fill_database(&database, &cube);
 
-  sequence *sequences = malloc(1000 * sizeof(sequence));
-  size_t num_sequences = 0;
-
-  for (size_t i = 0; i < database.size; ++i) {
-    if (is_yellow_layer(database.cubes + i)) {
-      sequences[num_sequences] = database.sequences[i];
-      num_sequences++;
-    }
-  }
-
-  printf("Found %zu\n", num_sequences);
-
-  printf("Using combinations to fill the whole yellow layer subgroup...\n");
-  Database subgroup = init_database(100000);
-
-  fill_subgroup(&subgroup, &cube, sequences, num_sequences);
-
   size_t num_permutations = 0;
   size_t num_solutions = 0;
+
+  printf("Solving...\n");
 
   for (size_t i = 0; i < subgroup.size; ++i) {
     if (!is_yellow_layer(subgroup.cubes + i)) {
@@ -340,21 +339,21 @@ void solve_pll(size_t database_size, size_t cache_size, size_t depth) {
       Cube front_view = subgroup.cubes[i];
       rotate_x_prime(&front_view);
       render(&front_view);
+      printf("\n");
       num_permutations++;
     }
   }
 
   printf("Done with %zu elements of which %zu are permutations. Solved %zu of them.\n", subgroup.size, num_permutations, num_solutions);
 
-  free_database(&database);
   free_database(&subgroup);
-  free(sequences);
+  free_database(&database);
 }
 
 int main() {
   srand(time(NULL));
 
-  solve_pll(30000000, 1000000, 1);
+  solve_pll(40000000, 1000000, 1);
 
   return EXIT_SUCCESS;
 }
