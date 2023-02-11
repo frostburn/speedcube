@@ -20,6 +20,12 @@ int main() {
   render(&cube);
 
   cube = test_cube();
+  rotate_x(&cube);
+  assert(cube.a == 13147226992454378ULL);
+  assert(cube.b == 7735506144291903ULL);
+  assert(cube.c == 16848776528379325ULL);
+
+  cube = test_cube();
   apply(&cube, U);
   assert(cube.a == 12009599812412589ULL);
   assert(cube.b == 15445448493591990ULL);
