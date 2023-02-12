@@ -672,3 +672,90 @@ void apply(Cube *cube, enum move move) {
       exit(EXIT_FAILURE);
   }
 }
+
+/* Compensate applied move with a rotation to keep the centers in place. */
+void compensate(Cube *cube, enum move move) {
+  switch (move) {
+    case u:
+      rotate_y_prime(cube);
+      break;
+    case u_prime:
+      rotate_y(cube);
+      break;
+    case u2:
+      rotate_y2(cube);
+      break;
+    case d:
+      rotate_y(cube);
+      break;
+    case d_prime:
+      rotate_y_prime(cube);
+      break;
+    case d2:
+      rotate_y2(cube);
+      break;
+    case r:
+      rotate_x_prime(cube);
+      break;
+    case r_prime:
+      rotate_x(cube);
+      break;
+    case r2:
+      rotate_x2(cube);
+      break;
+    case l:
+      rotate_x(cube);
+      break;
+    case l_prime:
+      rotate_x_prime(cube);
+      break;
+    case l2:
+      rotate_x2(cube);
+      break;
+    case f:
+      rotate_z_prime(cube);
+      break;
+    case f_prime:
+      rotate_z(cube);
+      break;
+    case f2:
+      rotate_z2(cube);
+      break;
+    case b:
+      rotate_z(cube);
+      break;
+    case b_prime:
+      rotate_z_prime(cube);
+      break;
+    case b2:
+      rotate_z2(cube);
+      break;
+    case M:
+      rotate_x(cube);
+      break;
+    case M_prime:
+      rotate_x_prime(cube);
+      break;
+    case M2:
+      rotate_x2(cube);
+      break;
+    case E:
+      rotate_y(cube);
+      break;
+    case E_prime:
+      rotate_y_prime(cube);
+      break;
+    case E2:
+      rotate_y2(cube);
+      break;
+    case S:
+      rotate_z_prime(cube);
+      break;
+    case S_prime:
+      rotate_z(cube);
+      break;
+    case S2:
+      rotate_z2(cube);
+      break;
+  }
+}

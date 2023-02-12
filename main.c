@@ -7,6 +7,7 @@
 #include "moves.c"
 #include "sequence.c"
 #include "bst.c"
+#include "indexer.c"
 
 typedef struct {
   Cube *cubes;
@@ -19,6 +20,46 @@ typedef struct {
 
 
 /* Utilities */
+
+void scramble(Cube *cube) {
+  for (int i = 0; i < 100; ++i) {
+    int r = rand() % 6;
+    switch(r) {
+      case 0:
+        turn_U(cube);
+        break;
+      case 1:
+        turn_D(cube);
+        break;
+      case 2:
+        turn_R(cube);
+        break;
+      case 3:
+        turn_L(cube);
+        break;
+      case 4:
+        turn_F(cube);
+        break;
+      case 5:
+        turn_B(cube);
+        break;
+    }
+  }
+}
+
+void roll(Cube *cube) {
+  for (int i = 0; i < 100; ++i) {
+    int r = rand() % 2;
+    switch(r) {
+      case 0:
+        rotate_y_prime(cube);
+        break;
+      case 1:
+        rotate_x(cube);
+        break;
+    }
+  }
+}
 
 bool is_last_layer(Cube *cube) {
   if (is_top_layer(cube)) {
@@ -310,42 +351,27 @@ void solve_ll(size_t database_size, size_t cache_size, size_t depth, bool oll) {
   free_database(&database);
 }
 
-void solve_cross(size_t database_size, size_t cache_size, size_t depth) {
-  printf("Generating cross subgroup...\n");
-  Database subgroup = generate_cross_subgroup();
-
-  printf("Generating scramble database...\n");
+void solve_cross() {
   Cube cube;
   reset_cross(&cube);
-  Database database = init_database(database_size);
+  printf("Initializing indexer...\n");
+  Indexer indexer = init_indexer(190080);
+  printf("Filling indexer...\n");
+  fill_indexer(&indexer, &cube);
+  printf("Solving the cross on random scrambles...\n");
 
-  fill_database(&database, &cube);
-
-  size_t num_solutions = 0;
-  int max_length = 0;
-
-  printf("Solving...\n");
-
-  for (size_t i = 0; i < subgroup.size; ++i) {
-    sequence solution = solve(&database, subgroup.cubes + i, cache_size, depth);
-    int length = sequence_length(solution);
-    if (solution != INVALID) {
-      num_solutions++;
-      max_length = length > max_length ? length : max_length;
-    }
-    if (length >= 7) {
-      print_sequence(solution);
-      Cube front_view = subgroup.cubes[i];
-      rotate_x(&front_view);
-      render(&front_view);
-      printf("\n");
-    }
+  for (size_t i = 0; i < 20; ++i) {
+    reset_cross(&cube);
+    scramble(&cube);
+    roll(&cube);
+    sequence solution = indexed_solution(&indexer, &cube);
+    print_sequence(solution);
+    render(&cube);
+    printf("Becomes:\n");
+    apply_sequence(&cube, solution);
+    render(&cube);
+    printf("\n");
   }
-
-  printf("Done with %zu elements. Solved %zu of them. Longest solution took %d moves.\n", subgroup.size, num_solutions, max_length);
-
-  free_database(&subgroup);
-  free_database(&database);
 }
 
 void solve_f2l(size_t database_size, size_t cache_size, size_t depth, size_t sample_size) {
@@ -394,8 +420,8 @@ int main() {
   srand(time(NULL));
 
   // solve_ll(1000000, 1000000, 1, true);
-  // solve_cross(10000000, 200, 0);
-  solve_f2l(1000000, 1000000, 1, 1000);
+  // solve_f2l(1000000, 1000000, 1, 1000);
+  solve_cross();
 
   return EXIT_SUCCESS;
 }
