@@ -306,3 +306,34 @@ void print_sequence(sequence seq) {
   }
   printf("\n");
 }
+
+bool is_better(sequence a, sequence b) {
+  int score_a = 0;
+  int score_b = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    int move_a = a % NUM_MOVES;
+    int move_b = b % NUM_MOVES;
+    // Shorter
+    if (!move_a && move_b) {
+      return true;
+    }
+    // Longer
+    if (move_a && !move_b) {
+      return false;
+    }
+    score_a += move_a;
+    score_b += move_b;
+    a /= NUM_MOVES;
+    b /= NUM_MOVES;
+  }
+  // Simpler
+  if (score_a < score_b) {
+    return true;
+  }
+  // More complex
+  if (score_a > score_b) {
+    return false;
+  }
+  // Use lexicographic order
+  return a < b;
+}

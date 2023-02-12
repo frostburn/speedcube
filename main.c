@@ -115,7 +115,7 @@ bool update(Database *database, Cube *cube, sequence seq) {
   Cube *existing = get(database->root, cube);
   if (existing != NULL) {
     size_t i = existing - database->cubes;
-    if (seq < database->sequences[i]) {
+    if (is_better(seq, database->sequences[i])) {
       database->sequences[i] = seq;
       return true;
     }
@@ -261,7 +261,7 @@ sequence solve_cacheless(Database *database, Cube *cube, sequence seq, size_t de
     apply(&variant, m);
     sequence var_seq = seq * NUM_MOVES + m;
     sequence candidate = solve_cacheless(database, &variant, var_seq, depth - 1);
-    if (candidate < solution) {
+    if (is_better(candidate, solution)) {
       solution = candidate;
     }
   }
@@ -285,7 +285,7 @@ sequence solve(Database *database, Cube *cube, size_t cache_size, size_t depth) 
       if (scramble != NULL) {
         size_t index = scramble - database->cubes;
         sequence candidate = concat(cache.sequences[i], invert(database->sequences[index]));
-        if (candidate < solution) {
+        if (is_better(candidate, solution)) {
           solution = candidate;
         }
       }
@@ -353,7 +353,7 @@ void solve_pll(size_t database_size, size_t cache_size, size_t depth) {
 int main() {
   srand(time(NULL));
 
-  solve_pll(40000000, 1000000, 1);
+  solve_pll(100000000, 100000000, 1);
 
   return EXIT_SUCCESS;
 }

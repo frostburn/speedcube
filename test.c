@@ -165,6 +165,20 @@ int main() {
   assert(cube.b == 15445448493591990ULL);
   assert(cube.c == 16852179117111263ULL);
 
+  sequence two = from_moves((enum move[]){b2, b2, I});
+  sequence simple = from_moves((enum move[]){F, R, U_prime, I});
+  sequence complex = from_moves((enum move[]){S_prime, d2, l, I});
+  sequence four = from_moves((enum move[]){U, U, U, U, I});
+
+  assert(is_better(two, simple));
+  assert(is_better(two, complex));
+  assert(is_better(two, four));
+
+  assert(is_better(simple, complex));
+  assert(!is_better(complex, simple));
+
+  assert(is_better(complex, four));
+
   printf("All tests pass!\n");
 
   return EXIT_SUCCESS;
