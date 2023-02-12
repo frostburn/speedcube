@@ -66,6 +66,8 @@ void reset_oll(Cube *cube) {
 
 const bitboard CROSS = 186ULL << (5*9);
 const bitboard SIDE = 144ULL;
+const bitboard CROSS_MASK = CROSS | SIDE | (SIDE << 9) | (SIDE << 18) | (SIDE << 27);
+const bitboard YELLOW_MASK = ~(511ULL << (4* 9));
 
 /* Reset cube to a "solved" bottom cross configuration with most stickers removed. */
 void reset_cross(Cube *cube) {
@@ -76,6 +78,14 @@ void reset_cross(Cube *cube) {
   cube->a |= SIDE | (SIDE << 18);
   cube->b |= SIDE << 9 | (SIDE << 18);
   cube->c |= SIDE << 27;
+}
+
+/* Reset cube to a "solved" state with the yellow layer stickers removed. */
+void reset_f2l(Cube *cube) {
+  reset_oll(cube);
+  cube->a &= YELLOW_MASK;
+  cube->b &= YELLOW_MASK;
+  cube->c &= YELLOW_MASK;
 }
 
 /* Create a cube suitable for unit testing. */
@@ -198,6 +208,15 @@ bool is_yellow_layer(Cube *cube) {
     }
   }
   return true;
+}
+
+/* Returns true if the white cross is solved at the bottom. */
+bool has_cross(Cube *cube) {
+  return(
+    ((cube->a & CROSS_MASK) == 37748880ULL) &&
+    ((cube->b & CROSS_MASK) == 6544293246345216ULL) &&
+    ((cube->c & CROSS_MASK) == 6544312535875584ULL)
+  );
 }
 
 /* Returns true if only the top sides are scrambled and the rest is in default position. */

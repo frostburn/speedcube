@@ -266,6 +266,21 @@ Database generate_cross_subgroup() {
   return database;
 }
 
+Database generate_f2l_subgroup() {
+  Database database = init_database(9525600);
+  sequence sequences[] = {
+    U,
+    from_moves((enum move[]){R, U, R_prime, I}),
+    from_moves((enum move[]){L, U, L_prime, I}),
+    from_moves((enum move[]){B, U, B_prime, I}),
+    from_moves((enum move[]){B_prime, U, B, I}),
+  };
+  Cube cube;
+  reset_f2l(&cube);
+  fill_subgroup(&database, &cube, sequences, 5);
+  return database;
+}
+
 sequence solve_cacheless(Database *database, Cube *cube, sequence seq, size_t depth) {
   Cube *scramble = get(database->root, cube);
   if (scramble != NULL) {
@@ -423,11 +438,54 @@ void solve_cross(size_t database_size, size_t cache_size, size_t depth) {
   free_database(&database);
 }
 
+void solve_f2l(size_t database_size, size_t cache_size, size_t depth, size_t sample_size) {
+  printf("Generating F2L subgroup...\n");
+  Database subgroup = generate_f2l_subgroup();
+
+  printf("Generating scramble database...\n");
+  Cube cube;
+  reset_f2l(&cube);
+  Database database = init_database(database_size);
+
+  fill_database(&database, &cube);
+
+  size_t num_solutions = 0;
+  int max_length = 0;
+
+  printf("Solving a sample of %zu...\n", sample_size);
+
+  for (size_t j = 0; j < sample_size; ++j) {
+    size_t i = rand() % subgroup.size;
+    sequence solution = solve(&database, subgroup.cubes + i, cache_size, depth);
+    int length = sequence_length(solution);
+    if (solution != INVALID) {
+      num_solutions++;
+      max_length = length > max_length ? length : max_length;
+    }
+    if (length >= 7) {
+      print_sequence(solution);
+      Cube front_view = subgroup.cubes[i];
+      rotate_x(&front_view);
+      render(&front_view);
+      printf("\n");
+    }
+  }
+
+  double success_rate = num_solutions * 100;
+  success_rate /= sample_size;
+
+  printf("Done with %zu elements. Solved %zu of them with success rate %g%%. Longest solution took %d moves.\n", subgroup.size, num_solutions, success_rate, max_length);
+
+  free_database(&subgroup);
+  free_database(&database);
+}
+
 int main() {
   srand(time(NULL));
 
   // solve_ll(1000000, 1000000, 1, true);
-  solve_cross(10000000, 200, 0);
+  // solve_cross(10000000, 200, 0);
+  solve_f2l(1000000, 1000000, 1, 1000);
 
   return EXIT_SUCCESS;
 }

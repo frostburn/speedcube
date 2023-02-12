@@ -183,8 +183,6 @@ int main() {
   assert(is_better(simpler, simple));
   assert(!is_better(simple, simpler));
 
-  printf("All tests pass!\n");
-
   reset_oll(&cube);
   assert(cube.a == 35115784733176ULL);
   assert(cube.b == 17979214269771776ULL);
@@ -194,6 +192,14 @@ int main() {
   assert(cube.a == 37748880ULL);
   assert(cube.b == 6544293246345216ULL);
   assert(cube.c == 6544312535875584ULL);
+
+  reset_f2l(&cube);
+  assert(cube.a == 132121080ULL);
+  assert(cube.b == 17979214269771776ULL);
+  assert(cube.c == 17979281783128064ULL);
+  assert(has_cross(&cube));
+
+  printf("All tests pass!\n");
 
   return EXIT_SUCCESS;
 }
