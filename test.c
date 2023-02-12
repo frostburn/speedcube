@@ -190,5 +190,10 @@ int main() {
   assert(cube.b == 17979214269771776ULL);
   assert(cube.c == 18014397435740160ULL);
 
+  reset_cross(&cube);
+  assert(cube.a == 37748880ULL);
+  assert(cube.b == 6544293246345216ULL);
+  assert(cube.c == 6544312535875584ULL);
+
   return EXIT_SUCCESS;
 }

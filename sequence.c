@@ -338,3 +338,14 @@ bool is_better(sequence a, sequence b) {
   // Use lexicographic order
   return lexicographic;
 }
+
+int sequence_length(sequence seq) {
+  int result = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    if (seq % NUM_MOVES) {
+      result++;
+    }
+    seq /= NUM_MOVES;
+  }
+  return result;
+}

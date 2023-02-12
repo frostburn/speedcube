@@ -64,6 +64,20 @@ void reset_oll(Cube *cube) {
   }
 }
 
+const bitboard CROSS = 186ULL << (5*9);
+const bitboard SIDE = 144ULL;
+
+/* Reset cube to a "solved" bottom cross configuration with most stickers removed. */
+void reset_cross(Cube *cube) {
+  cube->a = 0;
+  cube->b = CROSS;
+  cube->c = CROSS;
+
+  cube->a |= SIDE | (SIDE << 18);
+  cube->b |= SIDE << 9 | (SIDE << 18);
+  cube->c |= SIDE << 27;
+}
+
 /* Create a cube suitable for unit testing. */
 Cube test_cube() {
   Cube cube;

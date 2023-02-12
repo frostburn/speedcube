@@ -197,10 +197,10 @@ void update_variants(Database *database, Cube *cube, sequence seq) {
 }
 
 void fill_database(Database *database, Cube *cube) {
-  size_t low = 0;
+  size_t low = -1;
   size_t high = 0;
   update(database, cube, 0);
-  while (database->size < database->max_size) {
+  while (low != high) {
     low = high;
     high = database->size;
     for (size_t i = low; i < high; ++i) {
@@ -254,6 +254,15 @@ Database generate_oll_subgroup() {
   Cube cube;
   reset_oll(&cube);
   fill_subgroup(&database, &cube, sequences, 2);
+  return database;
+}
+
+Database generate_cross_subgroup() {
+  Database database = init_database(190080);
+  sequence sequences[] = {U, D, R, L, F, B};
+  Cube cube;
+  reset_cross(&cube);
+  fill_subgroup(&database, &cube, sequences, 6);
   return database;
 }
 
@@ -376,10 +385,49 @@ void solve_ll(size_t database_size, size_t cache_size, size_t depth, bool oll) {
   free_database(&database);
 }
 
+void solve_cross(size_t database_size, size_t cache_size, size_t depth) {
+  printf("Generating cross subgroup...\n");
+  Database subgroup = generate_cross_subgroup();
+
+  printf("Generating scramble database...\n");
+  Cube cube;
+  reset_cross(&cube);
+  Database database = init_database(database_size);
+
+  fill_database(&database, &cube);
+
+  size_t num_solutions = 0;
+  int max_length = 0;
+
+  printf("Solving...\n");
+
+  for (size_t i = 0; i < subgroup.size; ++i) {
+    sequence solution = solve(&database, subgroup.cubes + i, cache_size, depth);
+    int length = sequence_length(solution);
+    if (solution != INVALID) {
+      num_solutions++;
+      max_length = length > max_length ? length : max_length;
+    }
+    if (length >= 7) {
+      print_sequence(solution);
+      Cube front_view = subgroup.cubes[i];
+      rotate_x(&front_view);
+      render(&front_view);
+      printf("\n");
+    }
+  }
+
+  printf("Done with %zu elements. Solved %zu of them. Longest solution took %d moves.\n", subgroup.size, num_solutions, max_length);
+
+  free_database(&subgroup);
+  free_database(&database);
+}
+
 int main() {
   srand(time(NULL));
 
-  solve_ll(1000000, 1000000, 1, true);
+  // solve_ll(1000000, 1000000, 1, true);
+  solve_cross(10000000, 200, 0);
 
   return EXIT_SUCCESS;
 }
