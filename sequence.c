@@ -1,6 +1,6 @@
 typedef unsigned __int128 sequence;
 
-const int SEQUENCE_MAX_LENGTH = 23;
+#define SEQUENCE_MAX_LENGTH (23)
 
 const sequence NOTHING = 0;
 const sequence INVALID = ~NOTHING;
@@ -15,6 +15,18 @@ sequence from_moves(enum move *moves) {
     result = NUM_MOVES * result + m;
     moves++;
   }
+}
+
+sequence reverse(sequence seq) {
+  sequence result = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    sequence move = seq % NUM_MOVES;
+    if (move) {
+      result = move + result * NUM_MOVES;
+    }
+    seq /= NUM_MOVES;
+  }
+  return result;
 }
 
 sequence concat(sequence a, sequence b) {
