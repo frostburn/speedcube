@@ -167,6 +167,7 @@ int main() {
 
   sequence two = from_moves((enum move[]){b2, b2, I});
   sequence simple = from_moves((enum move[]){F, R, U_prime, I});
+  sequence simpler = from_moves((enum move[]){U_prime, R, F, I});
   sequence complex = from_moves((enum move[]){S_prime, d2, l, I});
   sequence four = from_moves((enum move[]){U, U, U, U, I});
 
@@ -178,6 +179,9 @@ int main() {
   assert(!is_better(complex, simple));
 
   assert(is_better(complex, four));
+
+  assert(is_better(simpler, simple));
+  assert(!is_better(simple, simpler));
 
   printf("All tests pass!\n");
 

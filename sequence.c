@@ -308,6 +308,7 @@ void print_sequence(sequence seq) {
 }
 
 bool is_better(sequence a, sequence b) {
+  bool lexicographic = (a < b);
   int score_a = 0;
   int score_b = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
@@ -335,5 +336,5 @@ bool is_better(sequence a, sequence b) {
     return false;
   }
   // Use lexicographic order
-  return a < b;
+  return lexicographic;
 }
