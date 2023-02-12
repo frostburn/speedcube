@@ -53,6 +53,17 @@ void reset(Cube *cube) {
   }
 }
 
+/* Reset cube to "solved" OLL configuration with side stickers removed from yellow pieces. */
+void reset_oll(Cube *cube) {
+  reset(cube);
+  for (int j = 0; j < 4; ++j) {
+    bitboard mask = ~(7ULL << (9*j));
+    cube->a &= mask;
+    cube->b &= mask;
+    cube->c &= mask;
+  }
+}
+
 /* Create a cube suitable for unit testing. */
 Cube test_cube() {
   Cube cube;

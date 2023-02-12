@@ -185,5 +185,10 @@ int main() {
 
   printf("All tests pass!\n");
 
+  reset_oll(&cube);
+  assert(cube.a == 35115784733176ULL);
+  assert(cube.b == 17979214269771776ULL);
+  assert(cube.c == 18014397435740160ULL);
+
   return EXIT_SUCCESS;
 }

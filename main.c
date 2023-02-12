@@ -245,6 +245,18 @@ Database generate_yellow_subgroup() {
   return database;
 }
 
+Database generate_oll_subgroup() {
+  Database database = init_database(216);
+  sequence sequences[] = {
+    U,
+    from_moves((enum move[]){F, R, U, R_prime, U_prime, F_prime, I}),
+  };
+  Cube cube;
+  reset_oll(&cube);
+  fill_subgroup(&database, &cube, sequences, 2);
+  return database;
+}
+
 sequence solve_cacheless(Database *database, Cube *cube, sequence seq, size_t depth) {
   Cube *scramble = get(database->root, cube);
   if (scramble != NULL) {
@@ -308,13 +320,23 @@ sequence solve(Database *database, Cube *cube, size_t cache_size, size_t depth) 
   return solution;
 }
 
-void solve_pll(size_t database_size, size_t cache_size, size_t depth) {
+void solve_ll(size_t database_size, size_t cache_size, size_t depth, bool oll) {
   printf("Generating yellow subgroup...\n");
-  Database subgroup = generate_yellow_subgroup();
+  Database subgroup;
+  if (oll) {
+    printf("...OLL only.\n");
+    subgroup = generate_oll_subgroup();
+  } else {
+    subgroup = generate_yellow_subgroup();
+  }
 
   printf("Generating scramble database...\n");
   Cube cube;
-  reset(&cube);
+  if (oll) {
+    reset_oll(&cube);
+  } else {
+    reset(&cube);
+  }
   Database database = init_database(database_size);
 
   fill_database(&database, &cube);
@@ -330,7 +352,7 @@ void solve_pll(size_t database_size, size_t cache_size, size_t depth) {
       render(subgroup.cubes + i);
       exit(EXIT_FAILURE);
     }
-    if (is_yellow_permutation(subgroup.cubes + i)) {
+    if (oll || is_yellow_permutation(subgroup.cubes + i)) {
       sequence solution = solve(&database, subgroup.cubes + i, cache_size, depth);
       if (solution != INVALID) {
         num_solutions++;
@@ -344,7 +366,11 @@ void solve_pll(size_t database_size, size_t cache_size, size_t depth) {
     }
   }
 
-  printf("Done with %zu elements of which %zu are permutations. Solved %zu of them.\n", subgroup.size, num_permutations, num_solutions);
+  printf("Done with %zu elements", subgroup.size);
+  if(!oll) {
+    printf(" of which %zu are permutations", num_permutations);
+  }
+  printf(". Solved %zu of them.\n", num_solutions);
 
   free_database(&subgroup);
   free_database(&database);
@@ -353,7 +379,7 @@ void solve_pll(size_t database_size, size_t cache_size, size_t depth) {
 int main() {
   srand(time(NULL));
 
-  solve_pll(100000000, 100000000, 1);
+  solve_ll(1000000, 1000000, 1, true);
 
   return EXIT_SUCCESS;
 }
