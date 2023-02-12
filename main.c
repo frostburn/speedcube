@@ -372,6 +372,8 @@ void solve_cross() {
     render(&cube);
     printf("\n");
   }
+
+  free_indexer(&indexer);
 }
 
 void solve_f2l(size_t database_size, size_t cache_size, size_t depth, size_t sample_size) {
