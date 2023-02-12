@@ -6,12 +6,7 @@
 #include "cube.c"
 #include "moves.c"
 #include "sequence.c"
-
-typedef struct Node {
-  Cube *cube;
-  struct Node *left;
-  struct Node *right;
-} Node;
+#include "bst.c"
 
 typedef struct {
   Cube *cubes;
@@ -74,43 +69,6 @@ void free_database(Database *database) {
   free(database->nodes);
 }
 
-Cube* get(Node *node, Cube *cube) {
-  if (node == NULL) {
-    return NULL;
-  }
-
-  int cmp = compare(cube, node->cube);
-  if (cmp == 0) {
-    return node->cube;
-  } else if (cmp < 0) {
-    return get(node->left, cube);
-  } else {
-    return get(node->right, cube);
-  }
-}
-
-void insert(Node *root, Node *leaf) {
-  int cmp = compare(leaf->cube, root->cube);
-  if (cmp < 0) {
-    if (root->left == NULL) {
-      root->left = leaf;
-    } else {
-      insert(root->left, leaf);
-    }
-    return;
-  } else if (cmp > 0) {
-    if (root->right == NULL) {
-      root->right = leaf;
-    } else {
-      insert(root->right, leaf);
-    }
-    return;
-  }
-
-  fprintf(stderr, "Bad insert\n");
-  exit(EXIT_FAILURE);
-}
-
 bool update(Database *database, Cube *cube, sequence seq) {
   Cube *existing = get(database->root, cube);
   if (existing != NULL) {
@@ -139,54 +97,6 @@ bool update(Database *database, Cube *cube, sequence seq) {
   return true;
 }
 
-size_t height(Node *root) {
-  if (root == NULL) {
-    return 0;
-  }
-  size_t left_height = height(root->left);
-  size_t right_height = height(root->right);
-  if (left_height > right_height) {
-    return left_height + 1;
-  }
-  return right_height + 1;
-}
-
-int cmp_nodes(const void *a, const void *b) {
-  Node *x = (Node*) a;
-  Node *y = (Node*) b;
-  return compare(x->cube, y->cube);
-}
-
-Node* rebuild(Node *nodes, size_t size) {
-  if (!size) {
-    return NULL;
-  }
-  size_t root_index = size / 2;
-  size_t left_index = root_index / 2;
-  size_t right_size = size - root_index - 1;
-  size_t right_index = right_size / 2 + root_index + 1;
-
-  Node *root = nodes + root_index;
-  if (left_index == root_index) {
-    root->left = NULL;
-  } else {
-    root->left = nodes + left_index;
-    rebuild(nodes, root_index);
-  }
-  if (right_index == root_index || right_index >= size) {
-    root->right = NULL;
-  } else {
-    root->right = nodes + right_index;
-    rebuild(nodes + root_index + 1, right_size);
-  }
-  return root;
-}
-
-void balance(Database *database) {
-  qsort(database->nodes, database->size, sizeof(Node), cmp_nodes);
-  database->root = rebuild(database->nodes, database->size);
-}
-
 void update_variants(Database *database, Cube *cube, sequence seq) {
   for (sequence m = U; m <= MAX_MOVE; ++m) {
     Cube variant = *cube;
@@ -206,7 +116,7 @@ void fill_database(Database *database, Cube *cube) {
     for (size_t i = low; i < high; ++i) {
       update_variants(database, database->cubes + i, database->sequences[i]);
     }
-    balance(database);
+    database->root = balance(database->nodes, database->size);
   }
 }
 
@@ -229,7 +139,7 @@ void fill_subgroup(Database *database, Cube *cube, sequence *sequences, size_t n
     for (size_t i = low; i < high; ++i) {
       update_subgroup_variants(database, database->cubes + i, database->sequences[i], sequences, num_sequences);
     }
-    balance(database);
+    database->root = balance(database->nodes, database->size);
   }
 }
 
@@ -336,7 +246,7 @@ sequence solve(Database *database, Cube *cube, size_t cache_size, size_t depth) 
         }
       }
     }
-    balance(&cache);
+    cache.root = balance(cache.nodes, cache.size);
   }
 
   free_database(&cache);
