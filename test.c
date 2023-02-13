@@ -56,6 +56,17 @@ void test_locdir() {
   clone = to_cube(&ldc);
   assert(equals(&cube, &clone));
 
+  // y
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  rotate_y(&cube);
+
+  locdir_y(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
   // F
   locdir_reset(&ldc);
   cube = to_cube(&ldc);

@@ -17,7 +17,7 @@ void locdir_reset(LocDirCube *ldc) {
   }
   for (size_t i = 0; i < 12; ++i) {
     ldc->edge_locs[i] = i;
-    ldc->edge_dirs[i] = false;
+    ldc->edge_dirs[i] = true;
   }
   for (size_t i = 0; i < 6; ++i) {
     ldc->center_locs[i] = i;
@@ -151,6 +151,39 @@ bitboard corner_to_bitboard(char loc, char dir) {
   return 0ULL;
 }
 
+bitboard edge_to_bitboard(unsigned char loc, bool dir) {
+  switch (loc) {
+    case 0:
+      return dir ? 2ULL : 1ULL << (4*9 + 3);
+    case 1:
+      return dir ? 1ULL << (9 + 1) : 1ULL << (4*9 + 7);
+    case 2:
+      return dir ? 1ULL << (18 + 1) : 1ULL << (4*9 + 5);
+    case 3:
+      return dir ? 1ULL << (27 + 1) : 1ULL << (4*9 + 1);
+
+    case 4:
+      return dir ? 1ULL << 3 : 1ULL << (27 + 5);
+    case 5:
+      return dir ? 1ULL << (9 + 3) : 1ULL << 5;
+    case 6:
+      return dir ? 1ULL << (18 + 3) : 1ULL << (9 + 5);
+    case 7:
+      return dir ? 1ULL << (27 + 3) : 1ULL << (18 + 5);
+
+    case 8:
+      return dir ? 1ULL << 7 : 1ULL << (5*9 + 3);
+    case 9:
+      return dir ? 1ULL << (9 + 7) : 1ULL << (5*9 + 1);
+    case 10:
+      return dir ? 1ULL << (18 + 7) : 1ULL << (5*9 + 5);
+    case 11:
+      return dir ? 1ULL << (27 + 7) : 1ULL << (5*9 + 7);
+  }
+
+  return 0ULL;
+}
+
 Cube to_cube(LocDirCube *ldc) {
   bitboard red = 0;
   bitboard green = 0;
@@ -191,6 +224,44 @@ Cube to_cube(LocDirCube *ldc) {
   orange |= corner_to_bitboard(ldc->corner_locs[7], ldc->corner_dirs[7] + 2);
   white |= corner_to_bitboard(ldc->corner_locs[7], ldc->corner_dirs[7] + 1);
 
+
+  red |= edge_to_bitboard(ldc->edge_locs[0], ldc->edge_dirs[0]);
+  yellow |= edge_to_bitboard(ldc->edge_locs[0], !ldc->edge_dirs[0]);
+
+  green |= edge_to_bitboard(ldc->edge_locs[1], ldc->edge_dirs[1]);
+  yellow |= edge_to_bitboard(ldc->edge_locs[1], !ldc->edge_dirs[1]);
+
+  orange |= edge_to_bitboard(ldc->edge_locs[2], ldc->edge_dirs[2]);
+  yellow |= edge_to_bitboard(ldc->edge_locs[2], !ldc->edge_dirs[2]);
+
+  blue |= edge_to_bitboard(ldc->edge_locs[3], ldc->edge_dirs[3]);
+  yellow |= edge_to_bitboard(ldc->edge_locs[3], !ldc->edge_dirs[3]);
+
+  red |= edge_to_bitboard(ldc->edge_locs[4], ldc->edge_dirs[4]);
+  blue |= edge_to_bitboard(ldc->edge_locs[4], !ldc->edge_dirs[4]);
+
+  green |= edge_to_bitboard(ldc->edge_locs[5], ldc->edge_dirs[5]);
+  red |= edge_to_bitboard(ldc->edge_locs[5], !ldc->edge_dirs[5]);
+
+  orange |= edge_to_bitboard(ldc->edge_locs[6], ldc->edge_dirs[6]);
+  green |= edge_to_bitboard(ldc->edge_locs[6], !ldc->edge_dirs[6]);
+
+  blue |= edge_to_bitboard(ldc->edge_locs[7], ldc->edge_dirs[7]);
+  orange |= edge_to_bitboard(ldc->edge_locs[7], !ldc->edge_dirs[7]);
+
+  red |= edge_to_bitboard(ldc->edge_locs[8], ldc->edge_dirs[8]);
+  white |= edge_to_bitboard(ldc->edge_locs[8], !ldc->edge_dirs[8]);
+
+  green |= edge_to_bitboard(ldc->edge_locs[9], ldc->edge_dirs[9]);
+  white |= edge_to_bitboard(ldc->edge_locs[9], !ldc->edge_dirs[9]);
+
+  orange |= edge_to_bitboard(ldc->edge_locs[10], ldc->edge_dirs[10]);
+  white |= edge_to_bitboard(ldc->edge_locs[10], !ldc->edge_dirs[10]);
+
+  blue |= edge_to_bitboard(ldc->edge_locs[11], ldc->edge_dirs[11]);
+  white |= edge_to_bitboard(ldc->edge_locs[11], !ldc->edge_dirs[11]);
+
+
   return (Cube) {red | orange | yellow, green | orange | white, blue | yellow | white};
 }
 
@@ -210,6 +281,17 @@ static inline char corner_loc_U(char loc) {
   return loc;
 }
 
+// edge_loc_U spells the same
+
+void locdir_U(LocDirCube *ldc) {
+  for (size_t i = 0; i < 8; ++i) {
+    ldc->corner_locs[i] = corner_loc_U(ldc->corner_locs[i]);
+  }
+  for (size_t i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = corner_loc_U(ldc->edge_locs[i]);
+  }
+}
+
 static inline char corner_loc_D_prime(char loc) {
   switch (loc) {
     case 4:
@@ -224,24 +306,48 @@ static inline char corner_loc_D_prime(char loc) {
   return loc;
 }
 
-void locdir_U(LocDirCube *ldc) {
-  for (size_t i = 0; i < 8; ++i) {
-    ldc->corner_locs[i] = corner_loc_U(ldc->corner_locs[i]);
+// edge_loc_E_prime spells the same
+
+static inline char edge_loc_D_prime(char loc) {
+  switch (loc) {
+    case 8:
+      return 11;
+    case 9:
+      return 8;
+    case 10:
+      return 9;
+    case 11:
+      return 10;
   }
+  return loc;
 }
 
 void locdir_D_prime(LocDirCube *ldc) {
   for (size_t i = 0; i < 8; ++i) {
     ldc->corner_locs[i] = corner_loc_D_prime(ldc->corner_locs[i]);
   }
+  for (size_t i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = edge_loc_D_prime(ldc->edge_locs[i]);
+  }
 }
 
 void locdir_y(LocDirCube *ldc) {
   for (size_t i = 0; i < 8; ++i) {
-    if (ldc->corner_locs[i] < 4) {
-      ldc->corner_locs[i] = corner_loc_U(ldc->corner_locs[i]);
+    char loc = ldc->corner_locs[i];
+    if (loc < 4) {
+      ldc->corner_locs[i] = corner_loc_U(loc);
     } else {
-      ldc->corner_locs[i] = corner_loc_D_prime(ldc->corner_locs[i]);
+      ldc->corner_locs[i] = corner_loc_D_prime(loc);
+    }
+  }
+  for (size_t i = 0; i < 12; ++i) {
+    char loc = ldc->edge_locs[i];
+    if (loc < 4) {
+      ldc->edge_locs[i] = corner_loc_U(loc);
+    } else if (loc < 8) {
+      ldc->edge_locs[i] = corner_loc_D_prime(loc);
+    } else {
+      ldc->edge_locs[i] = edge_loc_D_prime(loc);
     }
   }
 }
@@ -272,6 +378,41 @@ static inline char corner_dir_R(char loc, char dir) {
   return dir;
 }
 
+static inline char edge_loc_R(char loc) {
+  switch (loc) {
+    case 2:
+      return 7;
+    case 7:
+      return 10;
+    case 6:
+      return 2;
+    case 10:
+      return 6;
+  }
+  return loc;
+}
+
+static inline char edge_dir_R(char loc, char dir) {
+  switch (loc) {
+    case 7:
+      return !dir;
+    case 10:
+      return !dir;
+  }
+  return dir;
+}
+
+void locdir_R(LocDirCube *ldc) {
+  for (size_t i = 0; i < 8; ++i) {
+    ldc->corner_locs[i] = corner_loc_R(ldc->corner_locs[i]);
+    ldc->corner_dirs[i] = corner_dir_R(ldc->corner_locs[i], ldc->corner_dirs[i]);
+  }
+  for (size_t i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = edge_loc_R(ldc->edge_locs[i]);
+    ldc->edge_dirs[i] = edge_dir_R(ldc->edge_locs[i], ldc->edge_dirs[i]);
+  }
+}
+
 static inline char corner_loc_L_prime(char loc) {
   switch (loc) {
     case 1:
@@ -298,11 +439,28 @@ static inline char corner_dir_L_prime(char loc, char dir) {
   return dir;
 }
 
-void locdir_R(LocDirCube *ldc) {
-  for (size_t i = 0; i < 8; ++i) {
-    ldc->corner_locs[i] = corner_loc_R(ldc->corner_locs[i]);
-    ldc->corner_dirs[i] = corner_dir_R(ldc->corner_locs[i], ldc->corner_dirs[i]);
+static inline char edge_loc_L_prime(char loc) {
+  switch (loc) {
+    case 0:
+      return 4;
+    case 4:
+      return 8;
+    case 5:
+      return 0;
+    case 8:
+      return 5;
   }
+  return loc;
+}
+
+static inline char edge_dir_L_prime(char loc, char dir) {
+  switch (loc) {
+    case 0:
+      return !dir;
+    case 5:
+      return !dir;
+  }
+  return dir;
 }
 
 void locdir_L_prime(LocDirCube *ldc) {
@@ -310,15 +468,27 @@ void locdir_L_prime(LocDirCube *ldc) {
     ldc->corner_locs[i] = corner_loc_L_prime(ldc->corner_locs[i]);
     ldc->corner_dirs[i] = corner_dir_L_prime(ldc->corner_locs[i], ldc->corner_dirs[i]);
   }
+  for (size_t i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = edge_loc_L_prime(ldc->edge_locs[i]);
+    ldc->edge_dirs[i] = edge_dir_L_prime(ldc->edge_locs[i], ldc->edge_dirs[i]);
+  }
 }
 
+/*
+// TODO: Slice M
 void locdir_x(LocDirCube *ldc) {
   for (size_t i = 0; i < 8; ++i) {
     char loc = corner_loc_R(corner_loc_L_prime(ldc->corner_locs[i]));
     ldc->corner_locs[i] = loc;
     ldc->corner_dirs[i] = corner_dir_R(loc, corner_dir_L_prime(loc, ldc->corner_dirs[i]));
   }
+  for (size_t i = 0; i < 12; ++i) {
+    char loc = edge_loc_R(edge_loc_L_prime(ldc->edge_locs[i]));
+    ldc->edge_locs[i] = loc;
+    ldc->edge_dirs[i] = edge_dir_R(loc, edge_dir_L_prime(loc, ldc->edge_dirs[i]));
+  }
 }
+*/
 
 /* Unoptimized basic operations */
 
@@ -371,6 +541,7 @@ void locdir_y2(LocDirCube *ldc) {
   locdir_y(ldc);
 }
 
+/*
 void locdir_x_prime(LocDirCube *ldc) {
   locdir_x(ldc);
   locdir_x(ldc);
@@ -380,6 +551,7 @@ void locdir_x2(LocDirCube *ldc) {
   locdir_x(ldc);
   locdir_x(ldc);
 }
+*/
 
 void locdir_F(LocDirCube *ldc) {
   locdir_y_prime(ldc);
