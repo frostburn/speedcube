@@ -133,9 +133,6 @@ int main() {
   assert(cube.b == 15440913008127414ULL);
   assert(cube.c == 16853139175997406ULL);
 
-  // printf("assert(cube.a == %lluULL);\nassert(cube.b == %lluULL);\nassert(cube.c == %lluULL);\n", cube.a, cube.b, cube.c);
-  // render(&cube);
-
   for (int i = 0; i < 100; ++i) {
     Cube reference = test_cube();
 
@@ -198,6 +195,24 @@ int main() {
   assert(cube.b == 17979214269771776ULL);
   assert(cube.c == 17979281783128064ULL);
   assert(has_cross(&cube));
+
+  reset_f2l_corners(&cube);
+  assert(cube.a == 88080720ULL);
+  assert(cube.b == 11997870970544128ULL);
+  assert(cube.c == 11997915979448320ULL);
+
+  reset_f2l_edges_a(&cube);
+  assert(cube.a == 37748888ULL);
+  assert(cube.b == 6544293246345216ULL);
+  assert(cube.c == 6544316830842880ULL);
+
+  reset_f2l_edges_b(&cube);
+  assert(cube.a == 48234672ULL);
+  assert(cube.b == 1970324885237760ULL);
+  assert(cube.c == 1970328058200064ULL);
+
+  // printf("assert(cube.a == %lluULL);\nassert(cube.b == %lluULL);\nassert(cube.c == %lluULL);\n", cube.a, cube.b, cube.c);
+  // render(&cube);
 
   printf("All tests pass!\n");
 

@@ -88,6 +88,37 @@ void reset_f2l(Cube *cube) {
   cube->c &= YELLOW_MASK;
 }
 
+const bitboard CORNER_MASK = 341ULL | (341ULL << 9) | (341ULL << 18) | (341ULL << 27) | (341ULL << (4*9)) | (341ULL << (5*9));
+
+void keep_corners(Cube *cube) {
+  cube->a &= CORNER_MASK;
+  cube->b &= CORNER_MASK;
+  cube->c &= CORNER_MASK;
+}
+
+void reset_f2l_corners(Cube *cube) {
+  reset_f2l(cube);
+  keep_corners(cube);
+}
+
+const bitboard FULL_F2L_EDGE_MASK = (186ULL << (5*9)) | 184ULL | (184ULL << 9) | (184ULL << 18) | (184ULL << 27);
+const bitboard F2L_EDGE_MASK_A = (186ULL << (5*9)) | 152ULL | (144ULL << 9) | (144ULL << 18) | (176ULL << 27);
+void reset_f2l_edges_a(Cube *cube) {
+  reset_f2l(cube);
+  cube->a &= F2L_EDGE_MASK_A;
+  cube->b &= F2L_EDGE_MASK_A;
+  cube->c &= F2L_EDGE_MASK_A;
+}
+
+const bitboard F2L_EDGE_MASK_B = (56ULL << (5*9)) | 176ULL | (56ULL << 9) | (187ULL << 18) | (24ULL << 27);
+void reset_f2l_edges_b(Cube *cube) {
+  reset_f2l(cube);
+  cube->a &= F2L_EDGE_MASK_B;
+  cube->b &= F2L_EDGE_MASK_B;
+  cube->c &= F2L_EDGE_MASK_B;
+}
+
+
 /* Create a cube suitable for unit testing. */
 Cube test_cube() {
   Cube cube;
