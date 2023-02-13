@@ -8,6 +8,8 @@
 #include "sequence.c"
 #include "bst.c"
 #include "indexer.c"
+#include "locdir.c"
+#include "tablebase.c"
 
 typedef struct {
   Cube *cubes;
@@ -418,12 +420,35 @@ void solve_f2l(size_t database_size, size_t cache_size, size_t depth, size_t sam
   free_database(&database);
 }
 
+void solve_2x2x2() {
+  LocDirCube two_cubed;
+
+  locdir_reset(&two_cubed);
+
+  // Nibblebase tablebase = init_nibblebase(LOCDIR_FOUR_CORNER_INDEX_SPACE, &locdir_four_corner_index);
+  Nibblebase tablebase = init_nibblebase(LOCDIR_CORNER_INDEX_SPACE, &locdir_corner_index);
+
+  populate_nibblebase(&tablebase, &two_cubed);
+
+  for (int i = 0; i < 20; ++i) {
+    locdir_scramble(&two_cubed);
+    print_sequence(nibble_solution(&tablebase, &two_cubed));
+    Cube cube = to_cube(&two_cubed);
+    render(&cube);
+    printf("\n");
+  }
+
+  free_nibblebase(&tablebase);
+}
+
 int main() {
   srand(time(NULL));
 
   // solve_ll(1000000, 1000000, 1, true);
   // solve_f2l(1000000, 1000000, 1, 1000);
-  solve_cross();
+  // solve_cross();
+
+  solve_2x2x2();
 
   return EXIT_SUCCESS;
 }
