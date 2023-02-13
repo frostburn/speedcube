@@ -7,6 +7,79 @@
 #include "cube.c"
 #include "moves.c"
 #include "sequence.c"
+#include "locdir.c"
+
+void test_locdir() {
+  LocDirCube ldc;
+
+  // U
+  locdir_reset(&ldc);
+  Cube cube = to_cube(&ldc);
+
+  turn_U(&cube);
+
+  locdir_U(&ldc);
+
+  Cube clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  // D
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  turn_D(&cube);
+
+  locdir_D(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  // R
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  turn_R(&cube);
+
+  locdir_R(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  // L
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  turn_L(&cube);
+
+  locdir_L(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  // F
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  turn_F(&cube);
+
+  locdir_F(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  // B
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  turn_B(&cube);
+
+  locdir_B(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  printf("All locdir tests pass!\n");
+}
 
 int main() {
   srand(time(NULL));
@@ -214,7 +287,9 @@ int main() {
   // printf("assert(cube.a == %lluULL);\nassert(cube.b == %lluULL);\nassert(cube.c == %lluULL);\n", cube.a, cube.b, cube.c);
   // render(&cube);
 
-  printf("All tests pass!\n");
+  printf("All cube tests pass!\n");
+
+  test_locdir();
 
   return EXIT_SUCCESS;
 }
