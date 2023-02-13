@@ -1,5 +1,7 @@
 // Locations and directions/orientations of cubies
 
+// TODO: Implement centers
+
 typedef struct {
   char corner_locs[8];
   char corner_dirs[8];
@@ -11,17 +13,75 @@ typedef struct {
 } LocDirCube;
 
 void locdir_reset(LocDirCube *ldc) {
-  for (size_t i = 0; i < 8; ++i) {
+  for (char i = 0; i < 8; ++i) {
     ldc->corner_locs[i] = i;
     ldc->corner_dirs[i] = 0;
   }
-  for (size_t i = 0; i < 12; ++i) {
+  for (char i = 0; i < 12; ++i) {
     ldc->edge_locs[i] = i;
     ldc->edge_dirs[i] = true;
   }
-  for (size_t i = 0; i < 6; ++i) {
+  for (char i = 0; i < 6; ++i) {
     ldc->center_locs[i] = i;
   }
+}
+
+void locdir_reset_edges(LocDirCube *ldc) {
+  for (char i = 0; i < 8; ++i) {
+    ldc->corner_locs[i] = -1;
+    ldc->corner_dirs[i] = 0;
+  }
+  for (char i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = i;
+    ldc->edge_dirs[i] = true;
+  }
+  for (char i = 0; i < 6; ++i) {
+    ldc->center_locs[i] = -1;
+  }
+}
+
+bool locdir_equals(LocDirCube *a, LocDirCube *b) {
+  for (char i = 0; i < 8; ++i) {
+    if (a->corner_locs[i] != b->corner_locs[i]) {
+      return false;
+    }
+    if (a->corner_dirs[i] != b->corner_dirs[i]) {
+      return false;
+    }
+  }
+  for (char i = 0; i < 12; ++i) {
+    if (a->edge_locs[i] != b->edge_locs[i]) {
+      return false;
+    }
+    if (a->edge_dirs[i] != b->edge_dirs[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool locdir_edges_solved(LocDirCube *ldc) {
+  for (char i = 0; i < 12; ++i) {
+    if (ldc->edge_locs[i] != i) {
+      return false;
+    }
+    if (!ldc->edge_dirs[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool locdir_solved(LocDirCube *ldc) {
+  for (char i = 0; i < 8; ++i) {
+    if (ldc->corner_locs[i] != i) {
+      return false;
+    }
+    if (ldc->corner_dirs[i] != 0) {
+      return false;
+    }
+  }
+  return locdir_edges_solved(ldc);
 }
 
 size_t locdir_corner_index(LocDirCube *ldc) {
@@ -60,6 +120,108 @@ size_t locdir_four_corner_index(LocDirCube *ldc) {
 }
 
 const size_t LOCDIR_FOUR_CORNER_INDEX_SPACE = 8*7*6*5 * 3*3*3*3;
+
+size_t locdir_edge_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 12; ++i) {
+    char loc = ldc->edge_locs[i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    // The orientation of the last edge can be determined given the rest
+    if (i < 11) {
+      result = ldc->edge_dirs[i] + 2 * result;
+    }
+  }
+  return result;
+}
+
+const size_t LOCDIR_EDGE_INDEX_SPACE = 12ULL*11*10*9*8*7*6*5*4*3*2*1 * 2*2*2*2 * 2*2*2*2 * 2*2*2*(1);
+
+size_t locdir_first_7_edge_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 7; ++i) {
+    char loc = ldc->edge_locs[i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[i] + 2 * result;
+  }
+  return result;
+}
+
+size_t locdir_last_7_edge_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 7; ++i) {
+    char loc = ldc->edge_locs[11 - i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[11 - j] < ldc->edge_locs[11 - i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[11 - i] + 2 * result;
+  }
+  return result;
+}
+
+const size_t LOCDIR_FIRST_7_EDGE_INDEX_SPACE = 12*11*10*9*8*7*6 * 2*2*2*2*2*2*2;
+const size_t LOCDIR_LAST_7_EDGE_INDEX_SPACE = LOCDIR_FIRST_7_EDGE_INDEX_SPACE;
+
+size_t locdir_first_4_edge_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->edge_locs[i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[i] + 2 * result;
+  }
+  return result;
+}
+
+size_t locdir_middle_4_edge_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->edge_locs[4 + i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[4 + j] < ldc->edge_locs[4 + i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[4 + i] + 2 * result;
+  }
+  return result;
+}
+
+size_t locdir_last_4_edge_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->edge_locs[11 - i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[11 - j] < ldc->edge_locs[11 - i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[11 - i] + 2 * result;
+  }
+  return result;
+}
+
+const size_t LOCDIR_FIRST_4_EDGE_INDEX_SPACE = 12*11*10*9 * 2*2*2*2;
+const size_t LOCDIR_MIDDLE_4_EDGE_INDEX_SPACE = LOCDIR_FIRST_4_EDGE_INDEX_SPACE;
+const size_t LOCDIR_LAST_4_EDGE_INDEX_SPACE = LOCDIR_FIRST_4_EDGE_INDEX_SPACE;
 
 bitboard corner_to_bitboard(char loc, char dir) {
   dir %= 3;
