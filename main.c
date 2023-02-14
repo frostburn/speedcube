@@ -441,6 +441,112 @@ void solve_2x2x2() {
   free_nibblebase(&tablebase);
 }
 
+
+void solve_edges() {
+  LocDirCube edges;
+
+  locdir_reset_edges(&edges);
+
+  Nibblebase first = init_nibblebase(LOCDIR_FIRST_4_EDGE_INDEX_SPACE, &locdir_first_4_edge_index);
+  Nibblebase middle = init_nibblebase(LOCDIR_MIDDLE_4_EDGE_INDEX_SPACE, &locdir_middle_4_edge_index);
+  Nibblebase last = init_nibblebase(LOCDIR_LAST_4_EDGE_INDEX_SPACE, &locdir_last_4_edge_index);
+
+  printf("Populating tablebase for first 4 edges.\n");
+  populate_nibblebase(&first, &edges);
+  printf("Populating tablebase for middle 4 edges.\n");
+  populate_nibblebase(&middle, &edges);
+  printf("Populating tablebase for last 4 edges.\n");
+  populate_nibblebase(&last, &edges);
+
+  // TODO: Perfect estimator around the goal state.
+
+  unsigned char estimator(LocDirCube *ldc) {
+    unsigned char first_depth = get_nibble(&first, (*first.index_func)(ldc));
+    unsigned char middle_depth = get_nibble(&middle, (*middle.index_func)(ldc));
+    unsigned char last_depth = get_nibble(&last, (*last.index_func)(ldc));
+    if (first_depth > last_depth && first_depth > middle_depth) {
+      return first_depth;
+    }
+    if (middle_depth > last_depth) {
+      return middle_depth;
+    }
+    return last_depth;
+  }
+
+  LocDirCube path[SEQUENCE_MAX_LENGTH];
+  size_t path_length = 0;
+  unsigned char FOUND = 254;
+
+  unsigned char search(unsigned char so_far, unsigned char bound) {
+    LocDirCube *ldc = path + (path_length - 1);
+    unsigned char lower_bound = so_far + estimator(ldc);
+    if (lower_bound > bound) {
+      return lower_bound;
+    }
+    if (locdir_edges_solved(ldc)) {
+      return FOUND;
+    }
+    unsigned char min = 255;
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
+      path[path_length] = *ldc;
+      locdir_apply_stable(path + path_length, STABLE_MOVES[i]);
+
+      bool in_path = false;
+      for (size_t j = 0; j < path_length; ++j) {
+        if (locdir_equals(path + path_length, path + j)) {
+          in_path = true;
+          break;
+        }
+      }
+      if (in_path) {
+        continue;
+      }
+
+      path_length++;
+      unsigned char child_result = search(so_far + 1, bound);
+      if (child_result == FOUND) {
+        return FOUND;
+      }
+      if (child_result < min) {
+        min = child_result;
+      }
+      path_length--;
+    }
+    return min;
+  }
+
+  printf("Solving a few scrambles...\n");
+
+  for (size_t j = 0; j < 5; j++) {
+    locdir_reset_edges(path);
+    locdir_scramble(path);
+    path_length = 1;
+
+    unsigned char bound = estimator(path);
+
+    printf("Performing IDA* with bound %d\n", bound);
+
+    for (;;) {
+      unsigned char search_result = search(0, bound);
+      if (search_result == FOUND) {
+        printf("Found a solution in %d moves:\n", bound);
+        break;
+      }
+      bound = search_result;
+      printf("Increasing bound to %d\n", bound);
+    }
+
+    for (size_t i = 0; i < path_length; ++i) {
+      Cube cube = to_cube(path + i);
+      render(&cube);
+    }
+  }
+
+  free_nibblebase(&first);
+  free_nibblebase(&middle);
+  free_nibblebase(&last);
+}
+
 int main() {
   srand(time(NULL));
 
@@ -448,7 +554,9 @@ int main() {
   // solve_f2l(1000000, 1000000, 1, 1000);
   // solve_cross();
 
-  solve_2x2x2();
+  // solve_2x2x2();
+
+  solve_edges();
 
   return EXIT_SUCCESS;
 }
