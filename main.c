@@ -547,6 +547,18 @@ void solve_edges() {
   free_nibblebase(&last);
 }
 
+int cmp_size_t(const void *a, const void *b) {
+  size_t x = *(size_t*)a;
+  size_t y = *(size_t*)b;
+  if (x < y) {
+    return -1;
+  }
+  if (x > y) {
+    return 1;
+  }
+  return 0;
+}
+
 int main() {
   srand(time(NULL));
 
@@ -556,7 +568,115 @@ int main() {
 
   // solve_2x2x2();
 
-  solve_edges();
+  // solve_edges();
+
+  LocDirCube root;
+  LocDirCube *goal = &root;
+
+  locdir_reset_edges(goal);
+
+  size_t max_depth = 5;
+  size_t current_depth = 0;
+
+  size_t (*hash_func)(LocDirCube*) = locdir_edge_index;
+
+  // size_t max_size = NUM_STABLE_MOVES * NUM_STABLE_MOVES * NUM_STABLE_MOVES * NUM_STABLE_MOVES * NUM_STABLE_MOVES;
+  // size_t *hashes = malloc(sizeof(size_t));
+  size_t **bins = malloc(max_depth * sizeof(size_t*));
+  size_t **lids = malloc(max_depth * sizeof(size_t*));
+
+  // bins[0] = malloc(sizeof(size_t));
+
+  // hashes[0] = (*hash_func)(goal);
+  // bins[0] = hashes;
+  // bins[1] = hashes + 1;
+
+  // hashes = realloc(hashes, size * NUM_STABLE_MOVES * sizeof(size_t));
+
+  bool bin_has(size_t *bin, size_t *lid, size_t stride, size_t hash) {
+    if (bin >= lid) {
+      return false;
+    }
+    if (hash < *bin) {
+      return bin_has(bin + stride, max, stride * 2, hash);
+    }
+    if (hash > *bin) {
+      return bin_has(bin + stride + 1, max, stride * 2 + 1, hash);
+    }
+    return true;
+  }
+
+  bool has(size_t hash) {
+    for (size_t i = 0; i < current_depth; ++i) {
+      if (bin_has(bins[i], lid[i], 1, hash)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  HashNode *nodes;
+  HashNode *leaf;
+
+  void populate(LocDirCube *ldc, size_t depth) {
+    size_t hash = hash_func(ldc);
+    if (has(hash)) {
+      return;
+    }
+    if (depth <= 0) {
+      leaf->hash = hash;
+      if (leaf == nodes || insert_hash(nodes, leaf)) {
+        leaf++;
+      }
+      return;
+    }
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
+      LocDirCube child = *ldc;
+      locdir_apply_stable(&child, STABLE_MOVES[i]);
+      populate(&child, depth - 1);
+    }
+  }
+
+  void unload(HashNode *root, size_t *bin, size_t stride) {
+    if (root == NULL) {
+      return;
+    }
+    *bin = root->hash;
+    unload(root->left, bin + stride, stride * 2);
+    unload(root->right, bin + stride + 1, stride * 2 + 1);
+  }
+
+  for (size_t depth = 0; depth < max_depth; ++depth) {
+    current_depth = depth;
+    nodes = calloc((lids[depth] - bins[depth]) * NUM_STABLE_MOVES, sizeof(HashNode));
+    leaf = nodes;
+    populate(&root, depth);
+    size_t num_new = (leaf - nodes) * 2;
+    leaf = balance_hash(nodes, leaf - nodes);
+    bins[depth] = malloc(num_new * sizeof(size_t));
+    lids[depth] = bins + num_new;
+    for (size_t i = 0; i < num_new; ++i) {
+      bins[depth][i] = ~0ULL;
+    }
+    unload(leaf, bins[depth + 1], 0);
+    free(nodes);
+  }
+
+  /*
+  qsort(indices, size, sizeof(size_t), cmp_size_t);
+
+  size_t num_unique = 1;
+
+  for (size_t i = 0; i < size - 1; ++i) {
+    if (indices[i] != indices[i+1 ]) {
+      num_unique++;
+    }
+  }
+
+  printf("%zu -> %zu\n", size, num_unique);
+
+  free(indices);
+  */
 
   return EXIT_SUCCESS;
 }

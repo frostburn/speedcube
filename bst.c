@@ -88,3 +88,69 @@ Node* balance(Node *nodes, size_t num_nodes) {
   qsort(nodes, num_nodes, sizeof(Node), cmp_nodes);
   return rebuild(nodes, num_nodes);
 }
+
+
+typedef struct HashNode {
+  size_t hash;
+  struct HashNode *left;
+  struct HashNode *right;
+} HashNode;
+
+bool insert_hash(HashNode *root, HashNode *leaf) {
+  if (leaf->hash < root->hash) {
+    if (root->left == NULL) {
+      root->left = leaf;
+    } else {
+      return hash_insert(root->left, leaf);
+    }
+  } else if (leaf->hash > root->hash) {
+    if (root->right == NULL) {
+      root->right = leaf;
+    } else {
+      return hash_insert(root->right, leaf);
+    }
+  }
+  return false;
+}
+
+int cmp_hash_nodes(const void *a, const void *b) {
+  HashNode *x = (HashNode*) a;
+  HashNode *y = (HashNode*) b;
+  if (x->hash < y->hash) {
+    return -1;
+  }
+  if (x->hash > y->hash) {
+    return 1;
+  }
+  return 0;
+}
+
+HashNode* rebuild_hash(HashNode *nodes, size_t size) {
+  if (!size) {
+    return NULL;
+  }
+  size_t root_index = size / 2;
+  size_t left_index = root_index / 2;
+  size_t right_size = size - root_index - 1;
+  size_t right_index = right_size / 2 + root_index + 1;
+
+  HashNode *root = nodes + root_index;
+  if (left_index == root_index) {
+    root->left = NULL;
+  } else {
+    root->left = nodes + left_index;
+    rebuild(nodes, root_index);
+  }
+  if (right_index == root_index || right_index >= size) {
+    root->right = NULL;
+  } else {
+    root->right = nodes + right_index;
+    rebuild(nodes + root_index + 1, right_size);
+  }
+  return root;
+}
+
+HashNode* balance_hash(HashNode *nodes, size_t num_nodes) {
+  qsort(nodes, num_nodes, sizeof(HashNode), cmp_hash_nodes);
+  return rebuild_hash(nodes, num_nodes);
+}
