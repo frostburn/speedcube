@@ -26,6 +26,20 @@ void locdir_reset(LocDirCube *ldc) {
   }
 }
 
+void locdir_reset_corners(LocDirCube *ldc) {
+  for (char i = 0; i < 8; ++i) {
+    ldc->corner_locs[i] = i;
+    ldc->corner_dirs[i] = 0;
+  }
+  for (char i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = -1;
+    ldc->edge_dirs[i] = true;
+  }
+  for (char i = 0; i < 6; ++i) {
+    ldc->center_locs[i] = -1;
+  }
+}
+
 void locdir_reset_edges(LocDirCube *ldc) {
   for (char i = 0; i < 8; ++i) {
     ldc->corner_locs[i] = -1;
