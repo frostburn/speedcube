@@ -8,6 +8,73 @@
 #include "moves.c"
 #include "sequence.c"
 #include "locdir.c"
+#include "goalsphere.c"
+
+typedef struct
+{
+  LocDirCube ldc;
+  size_t hash;
+} HashPair;
+
+int cmp_hash_pair(const void *a, const void *b) {
+  return cmp_size_t(&((HashPair*)a)->hash, &((HashPair*)b)->hash);
+}
+
+void test_hash_collisions() {
+  printf("Checking for the quality of the hash...\n");
+  size_t depth = 5;
+
+  size_t size = 1;
+  size_t accum = 1;
+  for (size_t i = 0; i < depth; ++i) {
+    accum *= NUM_STABLE_MOVES;
+    size += accum;
+  }
+  HashPair *pairs = malloc(size * sizeof(HashPair));
+  size_t num_pairs = 0;
+  void accumulate(LocDirCube *ldc, size_t depth_) {
+    pairs[num_pairs].ldc = *ldc;
+    pairs[num_pairs].hash = locdir_centerless_hash(ldc);
+    num_pairs++;
+    if (depth_ <= 0) {
+      return;
+    }
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
+      LocDirCube child = *ldc;
+      locdir_apply_stable(&child, STABLE_MOVES[i]);
+      accumulate(&child, depth_ - 1);
+    }
+  }
+
+  LocDirCube root;
+  locdir_reset(&root);
+  accumulate(&root, depth);
+
+  qsort(pairs, num_pairs, sizeof(HashPair), cmp_hash_pair);
+
+  size_t num_unique = 1;
+  for (size_t i = 1; i < num_pairs; ++i) {
+    if (pairs[i-1].hash == pairs[i].hash) {
+      assert(locdir_equals(&pairs[i-1].ldc, &pairs[i].ldc));
+    } else {
+      assert(!locdir_equals(&pairs[i-1].ldc, &pairs[i].ldc));
+      num_unique++;
+    }
+  }
+  printf("No hash collisions found at depth %zu with %zu positions evaluated (%zu unique).\n", depth, num_pairs, num_unique);
+  free(pairs);
+
+  printf("Correlating with GoalSphere...\n");
+  GoalSphere sphere = init_goalsphere(&root, depth, locdir_centerless_hash);
+  size_t sphere_total = 0;
+  for (size_t i = 0; i < sphere.num_sets; ++i) {
+    sphere_total += sphere.set_sizes[i];
+  }
+  printf("%zu positions in the data structure.\n", sphere_total);
+
+  assert(num_unique == sphere_total);
+  free_goalsphere(&sphere);
+}
 
 void test_locdir() {
   LocDirCube ldc;
@@ -301,6 +368,8 @@ int main() {
   printf("All cube tests pass!\n");
 
   test_locdir();
+
+  test_hash_collisions();
 
   return EXIT_SUCCESS;
 }
