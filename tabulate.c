@@ -46,8 +46,8 @@ int main() {
   tablebase = init_nibblebase(LOCDIR_FIRST_7_EDGE_INDEX_SPACE, &locdir_first_7_edge_index);
   printf("Populating first 7 edges tablebase...\n");
   locdir_reset_edges(&ldc);
-  for (size_t i = 0; i < 7; ++i) {
-    ldc->edge_locs[i] = -1;
+  for (size_t i = 7; i < 12; ++i) {
+    ldc.edge_locs[i] = -1;
   }
   cube = to_cube(&ldc);
   render(&cube);
@@ -67,8 +67,8 @@ int main() {
   tablebase = init_nibblebase(LOCDIR_LAST_7_EDGE_INDEX_SPACE, &locdir_last_7_edge_index);
   printf("Populating last 7 edges tablebase...\n");
   locdir_reset_edges(&ldc);
-  for (size_t i = 0; i < 7; ++i) {
-    ldc->edge_locs[11 - i] = -1;
+  for (size_t i = 7; i < 12; ++i) {
+    ldc.edge_locs[11 - i] = -1;
   }
   cube = to_cube(&ldc);
   render(&cube);
