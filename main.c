@@ -580,6 +580,126 @@ void solve_edges() {
   free_goalsphere(&edge_sphere);
 }
 
+void solve_3x3x3() {
+  FILE *fptr;
+  size_t num_read;
+  size_t tablebase_size;
+
+  printf("Loading tablebase for first 7 edges.\n");
+  Nibblebase first = init_nibblebase(LOCDIR_FIRST_7_EDGE_INDEX_SPACE, &locdir_first_7_edge_index);
+  fptr = fopen("./tables/first_7_edges.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_FIRST_7_EDGE_INDEX_SPACE + 1)/2;
+  num_read = fread(first.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
+
+  printf("Loading tablebase for last 7 edges.\n");
+  Nibblebase last = init_nibblebase(LOCDIR_LAST_7_EDGE_INDEX_SPACE, &locdir_last_7_edge_index);
+  fptr = fopen("./tables/last_7_edges.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_LAST_7_EDGE_INDEX_SPACE + 1)/2;
+  num_read = fread(last.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
+
+  printf("Loading tablebase for the corners.\n");
+  Nibblebase corners = init_nibblebase(LOCDIR_CORNER_INDEX_SPACE, &locdir_corner_index);
+  fptr = fopen("./tables/corners.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_CORNER_INDEX_SPACE + 1)/2;
+  num_read = fread(corners.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
+
+  unsigned char estimator(LocDirCube *ldc) {
+    unsigned char first_depth = get_nibble(&first, (*first.index_func)(ldc));
+    unsigned char last_depth = get_nibble(&last, (*last.index_func)(ldc));
+    unsigned char corners_depth = get_nibble(&corners, (*corners.index_func)(ldc));
+
+    if (first_depth > last_depth && first_depth > corners_depth) {
+      return first_depth;
+    }
+    if (corners_depth > last_depth) {
+      return corners_depth;
+    }
+    return last_depth;
+  }
+
+  IDAstar ida;
+  ida.is_solved = locdir_solved;
+  ida.estimator = estimator;
+
+  LocDirCube ldc;
+  locdir_reset(&ldc);
+
+
+  printf("Solving a few scrambles...\n");
+  for (size_t j = 0; j < 5; j++) {
+    locdir_scramble(&ldc);
+
+    ida_star_solve(&ida, &ldc);
+
+    printf("Found a solution in %zu moves:\n", ida.path_length - 1);
+
+    for (size_t i = 0; i < ida.path_length; ++i) {
+      Cube cube = to_cube(ida.path + i);
+      render(&cube);
+    }
+  }
+
+  printf("Collecting statistics...\n");
+
+  clock_t start = clock();
+  size_t total_solves = 10;
+  size_t total_moves = 0;
+  size_t min_moves = ~0ULL;
+  size_t max_moves = 0;
+  for (size_t i = 0; i < total_solves; ++i) {
+    locdir_scramble(&ldc);
+    ida_star_solve(&ida, &ldc);
+    size_t num_moves = ida.path_length - 1;
+    total_moves += num_moves;
+    if (num_moves < min_moves) {
+      min_moves = num_moves;
+    }
+    if (num_moves > max_moves) {
+      max_moves = num_moves;
+    }
+  }
+  clock_t end = clock();
+
+  double took = end - start;
+  took /= CLOCKS_PER_SEC;
+
+  printf("Solved %zu scrambles in %g seconds (%g ms / solution).\n", total_solves, took, 1000 * took/total_solves);
+  printf("Minimum number of moves in a solution = %zu\n", min_moves);
+  printf("Average number of moves in a solution = %g\n", ((double)total_moves) / total_solves);
+  printf("Maximum number of moves in a solution = %zu\n", max_moves);
+
+  free_nibblebase(&first);
+  free_nibblebase(&last);
+  free_nibblebase(&corners);
+}
+
 int main() {
   srand(time(NULL));
 
@@ -589,7 +709,9 @@ int main() {
 
   // solve_2x2x2();
 
-  solve_edges();
+  // solve_edges();
+
+  solve_3x3x3();
 
   return EXIT_SUCCESS;
 }
