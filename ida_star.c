@@ -3,6 +3,7 @@ typedef struct {
   size_t path_length;
   bool (*is_solved)(LocDirCube*);
   unsigned char (*estimator)(LocDirCube*);
+  bool noisy;
 } IDAstar;
 
 const unsigned char FOUND = 254;
@@ -52,6 +53,9 @@ void ida_star_solve(IDAstar *ida, LocDirCube *ldc) {
   unsigned char bound = (*ida->estimator)(ida->path);
 
   for (;;) {
+    if (ida->noisy) {
+      printf("IDA* bound = %d\n", bound);
+    }
     unsigned char search_result = ida_star_search(ida, 0, bound);
     if (search_result == FOUND) {
       // Solution is stored in ida->path.

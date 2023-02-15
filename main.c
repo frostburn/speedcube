@@ -485,6 +485,7 @@ void solve_edges() {
   edge_sphere.num_sets = 6 + 1;
   edge_sphere.sets = malloc(edge_sphere.num_sets * sizeof(size_t*));
   edge_sphere.set_sizes = malloc(edge_sphere.num_sets * sizeof(size_t));
+
   edge_sphere.set_sizes[0] = 1;
   edge_sphere.set_sizes[1] = 27;
   edge_sphere.set_sizes[2] = 501;
@@ -549,7 +550,7 @@ void solve_edges() {
   printf("Collecting statistics...\n");
 
   clock_t start = clock();
-  size_t total_solves = 10000;
+  size_t total_solves = 1000;
   size_t total_moves = 0;
   size_t min_moves = ~0ULL;
   size_t max_moves = 0;
@@ -630,21 +631,33 @@ void solve_3x3x3() {
   }
   fclose(fptr);
 
-  unsigned char estimator(LocDirCube *ldc) {
+  unsigned char edge_estimator(LocDirCube *ldc) {
     unsigned char first_depth = get_nibble(&first, (*first.index_func)(ldc));
     unsigned char last_depth = get_nibble(&last, (*last.index_func)(ldc));
-    unsigned char corners_depth = get_nibble(&corners, (*corners.index_func)(ldc));
-
-    if (first_depth > last_depth && first_depth > corners_depth) {
+    if (first_depth > last_depth) {
       return first_depth;
-    }
-    if (corners_depth > last_depth) {
-      return corners_depth;
     }
     return last_depth;
   }
 
+  IDAstar edge_ida;
+  edge_ida.noisy = false;
+  edge_ida.is_solved = locdir_edges_solved;
+  edge_ida.estimator = edge_estimator;
+
+  unsigned char estimator(LocDirCube *ldc) {
+    ida_star_solve(&edge_ida, ldc);
+    unsigned char edge_depth = edge_ida.path_length - 1;
+    unsigned char corners_depth = get_nibble(&corners, (*corners.index_func)(ldc));
+
+    if (edge_depth > corners_depth) {
+      return edge_depth;
+    }
+    return corners_depth;
+  }
+
   IDAstar ida;
+  ida.noisy = true;
   ida.is_solved = locdir_solved;
   ida.estimator = estimator;
 
@@ -709,9 +722,9 @@ int main() {
 
   // solve_2x2x2();
 
-  // solve_edges();
+  solve_edges();
 
-  solve_3x3x3();
+  // solve_3x3x3();
 
   return EXIT_SUCCESS;
 }
