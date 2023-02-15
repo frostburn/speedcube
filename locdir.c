@@ -237,6 +237,10 @@ const size_t LOCDIR_FIRST_4_EDGE_INDEX_SPACE = 12*11*10*9 * 2*2*2*2;
 const size_t LOCDIR_MIDDLE_4_EDGE_INDEX_SPACE = LOCDIR_FIRST_4_EDGE_INDEX_SPACE;
 const size_t LOCDIR_LAST_4_EDGE_INDEX_SPACE = LOCDIR_FIRST_4_EDGE_INDEX_SPACE;
 
+size_t locdir_centerless_hash(LocDirCube *ldc) {
+  return locdir_corner_index(ldc) ^ (18804110 * locdir_edge_index(ldc));
+}
+
 bitboard corner_to_bitboard(char loc, char dir) {
   dir %= 3;
 
