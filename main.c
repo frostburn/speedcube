@@ -10,6 +10,8 @@
 #include "indexer.c"
 #include "locdir.c"
 #include "tablebase.c"
+#include "goalsphere.c"
+#include "ida_star.c"
 
 typedef struct {
   Cube *cubes;
@@ -443,108 +445,139 @@ void solve_2x2x2() {
 
 
 void solve_edges() {
-  LocDirCube edges;
+  FILE *fptr;
+  size_t num_read;
+  size_t tablebase_size;
 
-  locdir_reset_edges(&edges);
+  printf("Loading tablebase for first 7 edges.\n");
+  Nibblebase first = init_nibblebase(LOCDIR_FIRST_7_EDGE_INDEX_SPACE, &locdir_first_7_edge_index);
+  fptr = fopen("./tables/first_7_edges.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_FIRST_7_EDGE_INDEX_SPACE + 1)/2;
+  num_read = fread(first.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
 
-  Nibblebase first = init_nibblebase(LOCDIR_FIRST_4_EDGE_INDEX_SPACE, &locdir_first_4_edge_index);
-  Nibblebase middle = init_nibblebase(LOCDIR_MIDDLE_4_EDGE_INDEX_SPACE, &locdir_middle_4_edge_index);
-  Nibblebase last = init_nibblebase(LOCDIR_LAST_4_EDGE_INDEX_SPACE, &locdir_last_4_edge_index);
+  printf("Loading tablebase for last 7 edges.\n");
+  Nibblebase last = init_nibblebase(LOCDIR_LAST_7_EDGE_INDEX_SPACE, &locdir_last_7_edge_index);
+  fptr = fopen("./tables/last_7_edges.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_LAST_7_EDGE_INDEX_SPACE + 1)/2;
+  num_read = fread(last.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
 
-  printf("Populating tablebase for first 4 edges.\n");
-  populate_nibblebase(&first, &edges);
-  printf("Populating tablebase for middle 4 edges.\n");
-  populate_nibblebase(&middle, &edges);
-  printf("Populating tablebase for last 4 edges.\n");
-  populate_nibblebase(&last, &edges);
-
-  // TODO: Perfect estimator around the goal state.
+  printf("Loading database for the last 6 moves of an edges-only cube.\n");
+  GoalSphere edge_sphere;
+  edge_sphere.hash_func = locdir_edge_index;
+  edge_sphere.num_sets = 6 + 1;
+  edge_sphere.sets = malloc(edge_sphere.num_sets * sizeof(size_t*));
+  edge_sphere.set_sizes = malloc(edge_sphere.num_sets * sizeof(size_t));
+  edge_sphere.set_sizes[0] = 1;
+  edge_sphere.set_sizes[1] = 27;
+  edge_sphere.set_sizes[2] = 501;
+  edge_sphere.set_sizes[3] = 9121;
+  edge_sphere.set_sizes[4] = 157886;
+  edge_sphere.set_sizes[5] = 2612316;
+  edge_sphere.set_sizes[6] = 41391832;
+  fptr = fopen("./tables/edge_sphere.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  for (size_t i = 0; i < edge_sphere.num_sets; ++i) {
+    edge_sphere.sets[i] = malloc(edge_sphere.set_sizes[i] * sizeof(size_t));
+    num_read = fread(edge_sphere.sets[i], sizeof(size_t), edge_sphere.set_sizes[i], fptr);
+    if (num_read != edge_sphere.set_sizes[i]) {
+      fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, edge_sphere.set_sizes[i]);
+      exit(EXIT_FAILURE);
+    }
+  }
+  fclose(fptr);
 
   unsigned char estimator(LocDirCube *ldc) {
     unsigned char first_depth = get_nibble(&first, (*first.index_func)(ldc));
-    unsigned char middle_depth = get_nibble(&middle, (*middle.index_func)(ldc));
     unsigned char last_depth = get_nibble(&last, (*last.index_func)(ldc));
-    if (first_depth > last_depth && first_depth > middle_depth) {
+    unsigned char sphere_depth = goalsphere_depth(&edge_sphere, (*edge_sphere.hash_func)(ldc));
+    // We know that the cube was not solvable in 6 moves or less, so we can estimate at 7.
+    if (sphere_depth == UNKNOWN) {
+      sphere_depth = edge_sphere.num_sets;
+    }
+    if (first_depth > last_depth && first_depth > sphere_depth) {
       return first_depth;
     }
-    if (middle_depth > last_depth) {
-      return middle_depth;
+    if (sphere_depth > last_depth) {
+      return sphere_depth;
     }
     return last_depth;
   }
 
-  LocDirCube path[SEQUENCE_MAX_LENGTH];
-  size_t path_length = 0;
-  unsigned char FOUND = 254;
+  IDAstar ida;
+  ida.is_solved = locdir_edges_solved;
+  ida.estimator = estimator;
 
-  unsigned char search(unsigned char so_far, unsigned char bound) {
-    LocDirCube *ldc = path + (path_length - 1);
-    unsigned char lower_bound = so_far + estimator(ldc);
-    if (lower_bound > bound) {
-      return lower_bound;
-    }
-    if (locdir_edges_solved(ldc)) {
-      return FOUND;
-    }
-    unsigned char min = 255;
-    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
-      path[path_length] = *ldc;
-      locdir_apply_stable(path + path_length, STABLE_MOVES[i]);
+  LocDirCube edges;
+  locdir_reset_edges(&edges);
 
-      bool in_path = false;
-      for (size_t j = 0; j < path_length; ++j) {
-        if (locdir_equals(path + path_length, path + j)) {
-          in_path = true;
-          break;
-        }
-      }
-      if (in_path) {
-        continue;
-      }
-
-      path_length++;
-      unsigned char child_result = search(so_far + 1, bound);
-      if (child_result == FOUND) {
-        return FOUND;
-      }
-      if (child_result < min) {
-        min = child_result;
-      }
-      path_length--;
-    }
-    return min;
-  }
 
   printf("Solving a few scrambles...\n");
-
   for (size_t j = 0; j < 5; j++) {
-    locdir_reset_edges(path);
-    locdir_scramble(path);
-    path_length = 1;
+    locdir_scramble(&edges);
 
-    unsigned char bound = estimator(path);
+    ida_star_solve(&ida, &edges);
 
-    printf("Performing IDA* with bound %d\n", bound);
+    printf("Found a solution in %zu moves:\n", ida.path_length - 1);
 
-    for (;;) {
-      unsigned char search_result = search(0, bound);
-      if (search_result == FOUND) {
-        printf("Found a solution in %d moves:\n", bound);
-        break;
-      }
-      bound = search_result;
-      printf("Increasing bound to %d\n", bound);
-    }
-
-    for (size_t i = 0; i < path_length; ++i) {
-      Cube cube = to_cube(path + i);
+    for (size_t i = 0; i < ida.path_length; ++i) {
+      Cube cube = to_cube(ida.path + i);
       render(&cube);
     }
   }
 
+  printf("Collecting statistics...\n");
+
+  clock_t start = clock();
+  size_t total_solves = 10000;
+  size_t total_moves = 0;
+  size_t min_moves = ~0ULL;
+  size_t max_moves = 0;
+  for (size_t i = 0; i < total_solves; ++i) {
+    locdir_scramble(&edges);
+    ida_star_solve(&ida, &edges);
+    size_t num_moves = ida.path_length - 1;
+    total_moves += num_moves;
+    if (num_moves < min_moves) {
+      min_moves = num_moves;
+    }
+    if (num_moves > max_moves) {
+      max_moves = num_moves;
+    }
+  }
+  clock_t end = clock();
+
+  double took = end - start;
+  took /= CLOCKS_PER_SEC;
+
+  printf("Solved %zu scrambles in %g seconds (%g ms / solution).\n", total_solves, took, 1000 * took/total_solves);
+  printf("Minimum number of moves in a solution = %zu\n", min_moves);
+  printf("Average number of moves in a solution = %g\n", ((double)total_moves) / total_solves);
+  printf("Maximum number of moves in a solution = %zu\n", max_moves);
+
   free_nibblebase(&first);
-  free_nibblebase(&middle);
   free_nibblebase(&last);
+  free_goalsphere(&edge_sphere);
 }
 
 int main() {
