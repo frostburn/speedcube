@@ -331,7 +331,7 @@ bitboard corner_to_bitboard(char loc, char dir) {
   return 0ULL;
 }
 
-bitboard edge_to_bitboard(unsigned char loc, bool dir) {
+bitboard edge_to_bitboard(char loc, bool dir) {
   switch (loc) {
     case 0:
       return dir ? 2ULL : 1ULL << (4*9 + 3);
@@ -361,6 +361,13 @@ bitboard edge_to_bitboard(unsigned char loc, bool dir) {
       return dir ? 1ULL << (27 + 7) : 1ULL << (5*9 + 7);
   }
 
+  return 0ULL;
+}
+
+bitboard center_to_bitboard(char loc) {
+  if (0 <= loc && loc < 6) {
+    return 16ULL << (9 * loc);
+  }
   return 0ULL;
 }
 
@@ -441,6 +448,12 @@ Cube to_cube(LocDirCube *ldc) {
   blue |= edge_to_bitboard(ldc->edge_locs[11], ldc->edge_dirs[11]);
   white |= edge_to_bitboard(ldc->edge_locs[11], !ldc->edge_dirs[11]);
 
+  red |= center_to_bitboard(ldc->center_locs[0]);
+  green |= center_to_bitboard(ldc->center_locs[1]);
+  orange |= center_to_bitboard(ldc->center_locs[2]);
+  blue |= center_to_bitboard(ldc->center_locs[3]);
+  yellow |= center_to_bitboard(ldc->center_locs[4]);
+  white |= center_to_bitboard(ldc->center_locs[5]);
 
   return (Cube) {red | orange | yellow, green | orange | white, blue | yellow | white};
 }
@@ -528,6 +541,12 @@ void locdir_y(LocDirCube *ldc) {
       ldc->edge_locs[i] = corner_loc_D_prime(loc);
     } else {
       ldc->edge_locs[i] = edge_loc_D_prime(loc);
+    }
+  }
+  for (size_t i = 0; i < 6; ++i) {
+    char loc = ldc->center_locs[i];
+    if (loc < 4) {
+      ldc->center_locs[i] = (loc + 3) % 4;
     }
   }
 }
