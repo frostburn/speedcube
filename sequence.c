@@ -238,6 +238,7 @@ void print_sequence(sequence seq) {
         break;
       case u2:
         printf("u2 ");
+        break;
       case d:
         printf("d ");
         break;
@@ -246,6 +247,7 @@ void print_sequence(sequence seq) {
         break;
       case d2:
         printf("d2 ");
+        break;
       case r:
         printf("r ");
         break;
@@ -254,6 +256,7 @@ void print_sequence(sequence seq) {
         break;
       case r2:
         printf("r2 ");
+        break;
       case l:
         printf("l ");
         break;

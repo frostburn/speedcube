@@ -198,6 +198,15 @@ void test_locdir() {
     }
   }
 
+  for (enum move m = I; m <= MAX_MOVE; ++m) {
+    locdir_reset(&ldc);
+    cube = to_cube(&ldc);
+    locdir_apply(&ldc, m);
+    apply(&cube, m);
+    clone = to_cube(&ldc);
+    assert(equals(&cube, &clone));
+  }
+
   size_t indices[NUM_STABLE_MOVES];
   for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
     locdir_reset(&ldc);

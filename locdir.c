@@ -775,6 +775,16 @@ static inline char center_loc_M_prime(char loc) {
   return loc;
 }
 
+void locdir_M_prime(LocDirCube *ldc) {
+  for (size_t i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = edge_loc_M_prime(ldc->edge_locs[i]);
+    ldc->edge_dirs[i] = edge_dir_M_prime(ldc->edge_locs[i], ldc->edge_dirs[i]);
+  }
+  for (size_t i = 0; i < 6; ++i) {
+    ldc->center_locs[i] = center_loc_M_prime(ldc->center_locs[i]);
+  }
+}
+
 void locdir_x(LocDirCube *ldc) {
   for (size_t i = 0; i < 8; ++i) {
     char loc = corner_loc_R(corner_loc_L_prime(ldc->corner_locs[i]));
@@ -900,6 +910,46 @@ void locdir_B2(LocDirCube *ldc) {
   locdir_y_prime(ldc);
 }
 
+void locdir_M(LocDirCube *ldc) {
+  locdir_M_prime(ldc);
+  locdir_M_prime(ldc);
+  locdir_M_prime(ldc);
+}
+void locdir_M2(LocDirCube *ldc) {
+  locdir_M_prime(ldc);
+  locdir_M_prime(ldc);
+}
+void locdir_E(LocDirCube *ldc) {
+  locdir_z(ldc);
+  locdir_M(ldc);
+  locdir_z_prime(ldc);
+}
+void locdir_E_prime(LocDirCube *ldc) {
+  locdir_z(ldc);
+  locdir_M_prime(ldc);
+  locdir_z_prime(ldc);
+}
+void locdir_E2(LocDirCube *ldc) {
+  locdir_z(ldc);
+  locdir_M2(ldc);
+  locdir_z_prime(ldc);
+}
+void locdir_S(LocDirCube *ldc) {
+  locdir_y_prime(ldc);
+  locdir_M_prime(ldc);
+  locdir_y(ldc);
+}
+void locdir_S_prime(LocDirCube *ldc) {
+  locdir_y_prime(ldc);
+  locdir_M(ldc);
+  locdir_y(ldc);
+}
+void locdir_S2(LocDirCube *ldc) {
+  locdir_y_prime(ldc);
+  locdir_M2(ldc);
+  locdir_y(ldc);
+}
+
 #define NUM_STABLE_MOVES (27)
 
 // Slices re-interpreted as synchronized opposite side turns
@@ -1019,6 +1069,169 @@ void locdir_apply_stable(LocDirCube *ldc, enum move move) {
       break;
     default:
       fprintf(stderr, "Unimplemented stable move\n");
+      exit(EXIT_FAILURE);
+  }
+}
+
+void locdir_apply(LocDirCube *ldc, enum move move) {
+  switch (move) {
+    case I:
+      break;
+    case U:
+      locdir_U(ldc);
+      break;
+    case U_prime:
+      locdir_U_prime(ldc);
+      break;
+    case U2:
+      locdir_U2(ldc);
+      break;
+    case D:
+      locdir_D(ldc);
+      break;
+    case D_prime:
+      locdir_D_prime(ldc);
+      break;
+    case D2:
+      locdir_D2(ldc);
+      break;
+    case R:
+      locdir_R(ldc);
+      break;
+    case R_prime:
+      locdir_R_prime(ldc);
+      break;
+    case R2:
+      locdir_R2(ldc);
+      break;
+    case L:
+      locdir_L(ldc);
+      break;
+    case L_prime:
+      locdir_L_prime(ldc);
+      break;
+    case L2:
+      locdir_L2(ldc);
+      break;
+    case F:
+      locdir_F(ldc);
+      break;
+    case F_prime:
+      locdir_F_prime(ldc);
+      break;
+    case F2:
+      locdir_F2(ldc);
+      break;
+    case B:
+      locdir_B(ldc);
+      break;
+    case B_prime:
+      locdir_B_prime(ldc);
+      break;
+    case B2:
+      locdir_B2(ldc);
+      break;
+    case M:
+      locdir_M(ldc);
+      break;
+    case M_prime:
+      locdir_M_prime(ldc);
+      break;
+    case M2:
+      locdir_M2(ldc);
+      break;
+    case E:
+      locdir_E(ldc);
+      break;
+    case E_prime:
+      locdir_E_prime(ldc);
+      break;
+    case E2:
+      locdir_E2(ldc);
+      break;
+    case S:
+      locdir_S(ldc);
+      break;
+    case S_prime:
+      locdir_S_prime(ldc);
+      break;
+    case S2:
+      locdir_S2(ldc);
+      break;
+    case u:
+      locdir_y(ldc);
+      locdir_D(ldc);
+      break;
+    case u_prime:
+      locdir_y_prime(ldc);
+      locdir_D_prime(ldc);
+      break;
+    case u2:
+      locdir_y2(ldc);
+      locdir_D2(ldc);
+      break;
+    case d:
+      locdir_y_prime(ldc);
+      locdir_U(ldc);
+      break;
+    case d_prime:
+      locdir_y(ldc);
+      locdir_U_prime(ldc);
+      break;
+    case d2:
+      locdir_y2(ldc);
+      locdir_U2(ldc);
+      break;
+    case r:
+      locdir_x(ldc);
+      locdir_L(ldc);
+      break;
+    case r_prime:
+      locdir_x_prime(ldc);
+      locdir_L_prime(ldc);
+      break;
+    case r2:
+      locdir_x2(ldc);
+      locdir_L2(ldc);
+      break;
+    case l:
+      locdir_x_prime(ldc);
+      locdir_R(ldc);
+      break;
+    case l_prime:
+      locdir_x(ldc);
+      locdir_R_prime(ldc);
+      break;
+    case l2:
+      locdir_x2(ldc);
+      locdir_R2(ldc);
+      break;
+    case f:
+      locdir_z(ldc);
+      locdir_B(ldc);
+      break;
+    case f_prime:
+      locdir_z_prime(ldc);
+      locdir_B_prime(ldc);
+      break;
+    case f2:
+      locdir_z2(ldc);
+      locdir_B2(ldc);
+      break;
+    case b:
+      locdir_z_prime(ldc);
+      locdir_F(ldc);
+      break;
+    case b_prime:
+      locdir_z(ldc);
+      locdir_F_prime(ldc);
+      break;
+    case b2:
+      locdir_z2(ldc);
+      locdir_F2(ldc);
+      break;
+    default:
+      fprintf(stderr, "Unimplemented move\n");
       exit(EXIT_FAILURE);
   }
 }
