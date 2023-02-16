@@ -156,6 +156,48 @@ void test_locdir() {
   clone = to_cube(&ldc);
   assert(equals(&cube, &clone));
 
+  // x
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  rotate_x(&cube);
+
+  locdir_x(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  // z
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+
+  rotate_z(&cube);
+
+  locdir_z(&ldc);
+
+  clone = to_cube(&ldc);
+  assert(equals(&cube, &clone));
+
+  for (size_t j = 0; j < 10; ++j) {
+    locdir_reset(&ldc);
+
+    for (size_t i = 0; i < 10; ++i) {
+      int r = rand() % 3;
+      if (r == 0) {
+        locdir_x(&ldc);
+      } else if (r == 1) {
+        locdir_y(&ldc);
+      } else {
+        locdir_z(&ldc);
+      }
+    }
+
+    locdir_realign(&ldc);
+    for (size_t i = 0; i < 6; ++i) {
+      assert(ldc.center_locs[i] == i);
+    }
+  }
+
   size_t indices[NUM_STABLE_MOVES];
   for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
     locdir_reset(&ldc);

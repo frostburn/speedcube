@@ -733,8 +733,48 @@ void locdir_L_prime(LocDirCube *ldc) {
   }
 }
 
-/*
-// TODO: Slice M
+static inline char edge_loc_M_prime(char loc) {
+  switch (loc) {
+    case 1:
+      return 3;
+    case 3:
+      return 11;
+    case 11:
+      return 9;
+    case 9:
+      return 1;
+  }
+  return loc;
+}
+
+static inline char edge_dir_M_prime(char loc, char dir) {
+  switch (loc) {
+    case 3:
+      return !dir;
+    case 11:
+      return !dir;
+    case 9:
+      return !dir;
+    case 1:
+      return !dir;
+  }
+  return dir;
+}
+
+static inline char center_loc_M_prime(char loc) {
+  switch (loc) {
+    case 1:
+      return 4;
+    case 4:
+      return 3;
+    case 3:
+      return 5;
+    case 5:
+      return 1;
+  }
+  return loc;
+}
+
 void locdir_x(LocDirCube *ldc) {
   for (size_t i = 0; i < 8; ++i) {
     char loc = corner_loc_R(corner_loc_L_prime(ldc->corner_locs[i]));
@@ -742,12 +782,14 @@ void locdir_x(LocDirCube *ldc) {
     ldc->corner_dirs[i] = corner_dir_R(loc, corner_dir_L_prime(loc, ldc->corner_dirs[i]));
   }
   for (size_t i = 0; i < 12; ++i) {
-    char loc = edge_loc_R(edge_loc_L_prime(ldc->edge_locs[i]));
+    char loc = edge_loc_M_prime(edge_loc_R(edge_loc_L_prime(ldc->edge_locs[i])));
     ldc->edge_locs[i] = loc;
-    ldc->edge_dirs[i] = edge_dir_R(loc, edge_dir_L_prime(loc, ldc->edge_dirs[i]));
+    ldc->edge_dirs[i] = edge_dir_M_prime(loc, edge_dir_R(loc, edge_dir_L_prime(loc, ldc->edge_dirs[i])));
+  }
+  for (size_t i = 0; i < 6; ++i) {
+    ldc->center_locs[i] = center_loc_M_prime(ldc->center_locs[i]);
   }
 }
-*/
 
 /* Unoptimized basic operations */
 
@@ -800,7 +842,6 @@ void locdir_y2(LocDirCube *ldc) {
   locdir_y(ldc);
 }
 
-/*
 void locdir_x_prime(LocDirCube *ldc) {
   locdir_x(ldc);
   locdir_x(ldc);
@@ -810,7 +851,22 @@ void locdir_x2(LocDirCube *ldc) {
   locdir_x(ldc);
   locdir_x(ldc);
 }
-*/
+
+void locdir_z(LocDirCube *ldc) {
+  locdir_y_prime(ldc);
+  locdir_x(ldc);
+  locdir_y(ldc);
+}
+void locdir_z_prime(LocDirCube *ldc) {
+  locdir_y_prime(ldc);
+  locdir_x_prime(ldc);
+  locdir_y(ldc);
+}
+void locdir_z2(LocDirCube *ldc) {
+  locdir_y_prime(ldc);
+  locdir_x2(ldc);
+  locdir_y(ldc);
+}
 
 void locdir_F(LocDirCube *ldc) {
   locdir_y_prime(ldc);
@@ -964,6 +1020,40 @@ void locdir_apply_stable(LocDirCube *ldc, enum move move) {
     default:
       fprintf(stderr, "Unimplemented stable move\n");
       exit(EXIT_FAILURE);
+  }
+}
+
+/* Rotate the cube so that the centers are in the standard position. */
+void locdir_realign(LocDirCube *ldc) {
+  // Move white to the bottom
+  switch (ldc->center_locs[5]) {
+    case 0:
+      locdir_z_prime(ldc);
+      break;
+    case 1:
+      locdir_x_prime(ldc);
+      break;
+    case 2:
+      locdir_z(ldc);
+      break;
+    case 3:
+      locdir_x(ldc);
+      break;
+    case 4:
+      locdir_x2(ldc);
+      break;
+  }
+  // Move green to the front
+  switch (ldc->center_locs[1]) {
+    case 0:
+      locdir_y_prime(ldc);
+      break;
+    case 2:
+      locdir_y(ldc);
+      break;
+    case 3:
+      locdir_y2(ldc);
+      break;
   }
 }
 
