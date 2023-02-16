@@ -20,20 +20,28 @@ int cmp_size_t(const void *a, const void *b) {
 const unsigned char UNKNOWN = 255;
 
 bool set_has(size_t *set, size_t size, size_t hash) {
-  if (size <= 0) {
-    return false;
-  }
-  size_t halfway = size / 2;
-  if (set[halfway] == hash) {
+  size_t halfway;
+  size_t halfway_value;
+  for (;;) {
+    if (size == 0) {
+      return false;
+    }
+    halfway = size >> 1;
+    halfway_value = set[halfway];
+    if (hash < halfway_value) {
+      size = halfway;
+      continue;
+    }
+    if (hash > halfway_value) {
+      if (size <= halfway) {
+        return false;
+      }
+      set += halfway + 1;
+      size -= halfway + 1;
+      continue;
+    }
     return true;
   }
-  if (hash < set[halfway]) {
-    return set_has(set, halfway, hash);
-  }
-  if (size <= halfway) {
-    return false;
-  }
-  return set_has(set + halfway + 1, size - halfway - 1, hash);
 }
 
 const size_t OUTSIDE = ~0ULL;
