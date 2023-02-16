@@ -510,7 +510,7 @@ void solve_edges() {
   unsigned char estimator(LocDirCube *ldc) {
     unsigned char first_depth = get_nibble(&first, (*first.index_func)(ldc));
     unsigned char last_depth = get_nibble(&last, (*last.index_func)(ldc));
-    unsigned char sphere_depth = goalsphere_depth(&edge_sphere, (*edge_sphere.hash_func)(ldc));
+    unsigned char sphere_depth = goalsphere_depth(&edge_sphere, ldc, 0);
     // We know that the cube was not solvable in 6 moves or less, so we can estimate at 7.
     if (sphere_depth == UNKNOWN) {
       sphere_depth = edge_sphere.num_sets;
@@ -779,10 +779,9 @@ void pll_depths() {
   unsigned char search_depth = 6;
   size_t num_solvable = 0;
   for (size_t i = 0; i < num_cases; ++i) {
-    LocDirCube path[SEQUENCE_MAX_LENGTH];
     Cube cube = to_cube(cases + i);
     rotate_x_prime(&cube);
-    unsigned char depth = goalsphere_solve(&sphere, cases + i, search_depth);
+    unsigned char depth = goalsphere_depth(&sphere, cases + i, search_depth);
     if (depth == UNKNOWN) {
       printf("Not solvable in %zu moves or less.\n", sphere.num_sets - 1 + search_depth);
     } else {
@@ -803,7 +802,7 @@ void pll_depths() {
   free_goalsphere(&sphere);
 }
 
-void oll_depths() {
+void oll_solutions() {
   FILE *fptr;
 
   printf("Loading database for the last 6 OLL moves.\n");
@@ -898,17 +897,18 @@ void oll_depths() {
   unsigned char search_depth = 5;
   size_t num_solvable = 0;
   for (size_t i = 0; i < num_cases; ++i) {
-    LocDirCube path[SEQUENCE_MAX_LENGTH];
-    unsigned char depth = goalsphere_solve(&sphere, cases + i, search_depth);
-    if (depth == UNKNOWN) {
+    sequence solution = goalsphere_solve(&sphere, cases + i, search_depth);
+    if (solution == INVALID) {
       printf("Not solvable in %zu moves or less.\n", sphere.num_sets - 1 + search_depth);
     } else {
       num_solvable++;
+      int depth = sequence_length(solution);
       if (depth == 1) {
         printf("Solvable in 1 move!\n");
       } else {
         printf("Solvable in %d moves!\n", depth);
       }
+      print_sequence(solution);
     }
     rotate_x_prime(replicas + i);
     render(replicas + i);
@@ -938,7 +938,7 @@ int main() {
 
   // pll_depths();
 
-  oll_depths();
+  oll_solutions();
 
   return EXIT_SUCCESS;
 }

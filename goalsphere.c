@@ -59,7 +59,7 @@ size_t set_index(size_t *set, size_t size, size_t hash) {
   return halfway + 1 + right_index;
 }
 
-unsigned char goalsphere_depth(GoalSphere *sphere, size_t hash) {
+unsigned char goalsphere_depth_(GoalSphere *sphere, size_t hash) {
   for (unsigned char depth = 0; depth < sphere->num_sets; ++depth) {
     if (set_has(sphere->sets[depth], sphere->set_sizes[depth], hash)) {
       return depth;
@@ -68,14 +68,14 @@ unsigned char goalsphere_depth(GoalSphere *sphere, size_t hash) {
   return UNKNOWN;
 }
 
-unsigned char goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
+unsigned char goalsphere_depth(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
   LocDirCube path[SEQUENCE_MAX_LENGTH];
   path[0] = *ldc;
   size_t path_length = 1;
 
   unsigned char search(unsigned char so_far) {
     size_t hash = (*sphere->hash_func)(path + path_length - 1);
-    unsigned char depth = goalsphere_depth(sphere, hash);
+    unsigned char depth = goalsphere_depth_(sphere, hash);
     if (depth != UNKNOWN) {
       return depth;
     }
@@ -110,6 +110,87 @@ unsigned char goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
   }
 
   return search(0);
+}
+
+sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
+  if (sphere->num_sets < 1) {
+    return INVALID;
+  }
+  if (sphere->sets[0][0] == sphere->hash_func(ldc)) {
+    return I;
+  }
+  LocDirCube path[SEQUENCE_MAX_LENGTH];
+  path[0] = *ldc;
+  size_t path_length = 1;
+
+  sequence solve(unsigned char search_depth_) {
+    unsigned char best_depth = UNKNOWN;
+    LocDirCube children[NUM_MOVES - 1];
+    LocDirCube aligned;
+    bool best[NUM_MOVES - 1];
+    size_t i = 0;
+    for (enum move m = U; m <= MAX_MOVE; ++m) {
+      children[i] = path[path_length - 1];
+      locdir_apply(children + i, m);
+      bool in_path = false;
+      for (size_t j = 0; j < path_length; ++j) {
+        if (locdir_equals(children + i, path + j)) {
+          in_path = true;
+          break;
+        }
+      }
+      if (in_path) {
+        best[i] = false;
+        i++;
+        continue;
+      }
+      aligned = children[i];
+      locdir_realign(&aligned);
+      unsigned char depth = goalsphere_depth(sphere, &aligned, search_depth_);
+      if (depth < best_depth) {
+        best_depth = depth;
+        for (int idx = 0; idx < i; ++idx) {
+          best[idx] = false;
+        }
+      }
+      best[i] = (depth <= best_depth);
+      i++;
+    }
+
+    if (best_depth == 0) {
+      i = 0;
+      for (enum move m = U; m <= MAX_MOVE; ++m) {
+        if (best[i]) {
+          return m;
+        }
+        i++;
+      }
+    }
+
+    if (best_depth == UNKNOWN) {
+      return INVALID;
+    }
+
+    if (search_depth_ > 0) {
+      search_depth_--;
+    }
+    sequence solution = INVALID;
+    i = 0;
+    for (enum move m = U; m <= MAX_MOVE; ++m) {
+      if (best[i]) {
+        path[path_length++] = children[i];
+        sequence candidate = concat(m, solve(search_depth_));
+        path_length--;
+        if (is_better(candidate, solution)) {
+          solution = candidate;
+        }
+      }
+      i++;
+    }
+    return solution;
+  }
+
+  return solve(search_depth);
 }
 
 void update_goalsphere(GoalSphere *sphere, LocDirCube *ldc, size_t depth, size_t max_depth, bool *boundary) {
@@ -160,7 +241,7 @@ GoalSphere init_goalsphere(LocDirCube *goal, size_t max_depth, size_t (*hash_fun
     for (size_t i = 0; i < sphere.set_sizes[depth]; ++i) {
       size_t hash = sphere.sets[depth][i];
       size_t previous = (i > 0) ? sphere.sets[depth][i-1] : ~hash;
-      if (hash != previous && goalsphere_depth(&sphere, hash) == UNKNOWN) {
+      if (hash != previous && goalsphere_depth_(&sphere, hash) == UNKNOWN) {
         sphere.sets[depth][num_unique++] = hash;
       }
     }
