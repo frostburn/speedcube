@@ -731,6 +731,15 @@ void pll_depths() {
   }
   fclose(fptr);
 
+  LocDirCube root;
+
+  /*
+  printf("Generating a goal sphere of radius 7\n");
+  locdir_reset(&root);
+  GoalSphere sphere = init_goalsphere(&root, 7, &locdir_centerless_hash);
+  printf("Done\n");
+  */
+
   LocDirCube *cases = malloc(96 * sizeof(LocDirCube));
   size_t num_cases = 0;
 
@@ -762,13 +771,12 @@ void pll_depths() {
     generate(&child, depth - 1);
   }
 
-  LocDirCube root;
   locdir_reset(&root);
   generate(&root, 20);
 
   printf("%zu PLL cases generated\n", num_cases);
 
-  unsigned char search_depth = 3;
+  unsigned char search_depth = 6;
   size_t num_solvable = 0;
   for (size_t i = 0; i < num_cases; ++i) {
     LocDirCube path[SEQUENCE_MAX_LENGTH];
@@ -795,6 +803,126 @@ void pll_depths() {
   free_goalsphere(&sphere);
 }
 
+void oll_depths() {
+  FILE *fptr;
+
+  printf("Loading database for the last 6 OLL moves.\n");
+  GoalSphere sphere;
+  sphere.hash_func = locdir_oll_index;
+  sphere.num_sets = 6 + 1;
+  sphere.sets = malloc(sphere.num_sets * sizeof(size_t*));
+  sphere.set_sizes = malloc(sphere.num_sets * sizeof(size_t));
+  sphere.set_sizes[0] = 1;
+  sphere.set_sizes[1] = 21;
+  sphere.set_sizes[2] = 387;
+  sphere.set_sizes[3] = 7077;
+  sphere.set_sizes[4] = 126006;
+  sphere.set_sizes[5] = 2210527;
+  sphere.set_sizes[6] = 38327451;
+  fptr = fopen("./tables/oll_sphere.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  for (size_t i = 0; i < sphere.num_sets; ++i) {
+    sphere.sets[i] = malloc(sphere.set_sizes[i] * sizeof(size_t));
+    size_t num_read = fread(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
+    if (num_read != sphere.set_sizes[i]) {
+      fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, sphere.set_sizes[i]);
+      exit(EXIT_FAILURE);
+    }
+  }
+  fclose(fptr);
+
+  LocDirCube root;
+
+  /*
+  printf("Generating an OLL goal sphere of radius 7.\n");
+  locdir_reset(&root);
+  GoalSphere sphere = init_goalsphere(&root, 7, &locdir_oll_index);
+  printf("Done\n");
+  */
+
+  LocDirCube *cases = malloc(216 * sizeof(LocDirCube));
+  size_t *witnesses = malloc(216 * sizeof(size_t));
+  Cube *replicas = malloc(216 * sizeof(Cube));
+  size_t num_cases = 0;
+
+  void generate(LocDirCube *ldc, Cube *replica, size_t depth) {
+    Cube cube = to_cube(ldc);
+    if (is_yellow_layer(&cube)) {
+      size_t index = locdir_oll_index(ldc);
+      for (size_t i = 0; i < num_cases; ++i) {
+        if (index == witnesses[i]) {
+          return;
+        }
+      }
+      witnesses[num_cases] = index;
+      replicas[num_cases] = *replica;
+      cases[num_cases++] = *ldc;
+    }
+    if (depth <= 0) {
+      return;
+    }
+
+    LocDirCube child = *ldc;
+    locdir_U(&child);
+    Cube child_replica = *replica;
+    turn_U(&child_replica);
+    generate(&child, &child_replica, depth - 1);
+
+    child = *ldc;
+    locdir_F(&child);
+    locdir_R(&child);
+    locdir_U(&child);
+    locdir_R_prime(&child);
+    locdir_U_prime(&child);
+    locdir_F_prime(&child);
+    child_replica = *replica;
+    turn_F(&child_replica);
+    turn_R(&child_replica);
+    turn_U(&child_replica);
+    turn_R_prime(&child_replica);
+    turn_U_prime(&child_replica);
+    turn_F_prime(&child_replica);
+    generate(&child, &child_replica, depth - 1);
+  }
+
+  locdir_reset(&root);
+  Cube root_replica;
+  reset_oll(&root_replica);
+  generate(&root, &root_replica, 140);
+
+  printf("%zu OLL cases generated\n", num_cases);
+
+  unsigned char search_depth = 5;
+  size_t num_solvable = 0;
+  for (size_t i = 0; i < num_cases; ++i) {
+    LocDirCube path[SEQUENCE_MAX_LENGTH];
+    unsigned char depth = goalsphere_solve(&sphere, cases + i, search_depth);
+    if (depth == UNKNOWN) {
+      printf("Not solvable in %zu moves or less.\n", sphere.num_sets - 1 + search_depth);
+    } else {
+      num_solvable++;
+      if (depth == 1) {
+        printf("Solvable in 1 move!\n");
+      } else {
+        printf("Solvable in %d moves!\n", depth);
+      }
+    }
+    rotate_x_prime(replicas + i);
+    render(replicas + i);
+    printf("\n");
+  }
+
+  printf("%zu of %zu are solvable with given resources.\n", num_solvable, num_cases);
+
+  free(cases);
+  free(witnesses);
+  free(replicas);
+  free_goalsphere(&sphere);
+}
+
 int main() {
   srand(time(NULL));
 
@@ -808,7 +936,9 @@ int main() {
 
   // solve_3x3x3();
 
-  pll_depths();
+  // pll_depths();
+
+  oll_depths();
 
   return EXIT_SUCCESS;
 }

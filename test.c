@@ -156,6 +156,30 @@ void test_locdir() {
   clone = to_cube(&ldc);
   assert(equals(&cube, &clone));
 
+  size_t indices[NUM_STABLE_MOVES];
+  for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
+    locdir_reset(&ldc);
+    // reset_oll(&cube);
+    // apply(&cube, STABLE_MOVES[i]);
+    // compensate(&cube, STABLE_MOVES[i]);
+    locdir_apply_stable(&ldc, STABLE_MOVES[i]);
+    indices[i] = locdir_oll_index(&ldc);
+    // printf("%zu\n", indices[i]);
+    // render(&cube);
+    // printf("\n");
+  }
+
+  qsort(indices, NUM_STABLE_MOVES, sizeof(size_t), cmp_size_t);
+
+  size_t num_unique = 1;
+  for (size_t i = 1; i < NUM_STABLE_MOVES; ++i) {
+    if (indices[i - 1] != indices[i]) {
+      num_unique++;
+    }
+  }
+
+  assert(num_unique == 22);
+
   printf("All locdir tests pass!\n");
 }
 

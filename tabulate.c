@@ -160,6 +160,39 @@ void create_3x3x3_sphere() {
   free_goalsphere(&sphere);
 }
 
+void create_oll_sphere() {
+  Cube cube;
+  LocDirCube ldc;
+  FILE *fptr;
+  GoalSphere sphere;
+
+  printf("Creating a OLL goal sphere around the 3x3x3 solution (implicit centers)...\n");
+  locdir_reset(&ldc);
+  cube = to_cube(&ldc);
+  reset_oll(&cube);
+  render(&cube);
+  sphere = init_goalsphere(&ldc, 6, &locdir_oll_index);
+  printf("Storing result...\n");
+  fptr = fopen("./tables/oll_sphere.bin", "wb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open storage.\n");
+    exit(EXIT_FAILURE);
+  }
+  for (size_t i = 0; i < sphere.num_sets; ++i) {
+    printf("Depth %zu has %zu unique configurations.\n", i, sphere.set_sizes[i]);
+    fwrite(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
+  }
+  // Depth 0 has 1 unique configurations.
+  // Depth 1 has 21 unique configurations.
+  // Depth 2 has 387 unique configurations.
+  // Depth 3 has 7077 unique configurations.
+  // Depth 4 has 126006 unique configurations.
+  // Depth 5 has 2210527 unique configurations.
+  // Depth 6 has 38327451 unique configurations.
+  fclose(fptr);
+  free_goalsphere(&sphere);
+}
+
 int main() {
   create_corner_tablebase();
   printf("Corners done.\n");
@@ -172,6 +205,8 @@ int main() {
   printf("\n");
 
   create_3x3x3_sphere();
+
+  create_oll_sphere();
 
   return EXIT_SUCCESS;
 }

@@ -237,6 +237,66 @@ const size_t LOCDIR_FIRST_4_EDGE_INDEX_SPACE = 12*11*10*9 * 2*2*2*2;
 const size_t LOCDIR_MIDDLE_4_EDGE_INDEX_SPACE = LOCDIR_FIRST_4_EDGE_INDEX_SPACE;
 const size_t LOCDIR_LAST_4_EDGE_INDEX_SPACE = LOCDIR_FIRST_4_EDGE_INDEX_SPACE;
 
+/* Index for an intermediary stage in OLL solving. */
+size_t locdir_oll_index(LocDirCube *ldc) {
+  size_t result = 0;
+  // Bottom corners
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->corner_locs[4 + i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->corner_locs[4 + j] < ldc->corner_locs[4 + i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (8 - i);
+    result = ldc->corner_dirs[4 + i] + 3 * result;
+  }
+  // F2L edges
+  for (int i = 0; i < 8; ++i) {
+    char loc = ldc->edge_locs[4 + i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[4 + j] < ldc->edge_locs[4 + i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[4 + i] + 2 * result;
+  }
+
+  char top_corners[4];
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->corner_locs[i];
+    for (int j = 4; j < 8; ++j) {
+      if (ldc->corner_locs[j] < ldc->corner_locs[i]) {
+        loc--;
+      }
+    }
+    top_corners[loc] = ldc->corner_dirs[i];
+  }
+  // Last orientation is implicit
+  for (int i = 0; i < 3; ++i) {
+    result = top_corners[i] + 3 * result;
+  }
+
+  bool top_edges[4];
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->edge_locs[i];
+    for (int j = 4; j < 12; ++j) {
+      if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
+        loc--;
+      }
+    }
+    top_edges[loc] = ldc->edge_dirs[i];
+  }
+  // Last orientation is implicit
+  for (int i = 0; i < 3; ++i) {
+    result = top_edges[i] + 2 * result;
+  }
+  return result;
+}
+
+const size_t LOCDIR_OLL_INDEX_SPACE = (8ULL*7*6*5 * 3*3*3*3) * (12ULL*11*10*9*8*7*6*5 * 2*2*2*2*2*2*2*2) * (3*3*3*(1)) * (2*2*2*(1));
+
 size_t locdir_centerless_hash(LocDirCube *ldc) {
   return locdir_corner_index(ldc) ^ (18804110 * locdir_edge_index(ldc));
 }
