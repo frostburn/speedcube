@@ -68,6 +68,50 @@ unsigned char goalsphere_depth(GoalSphere *sphere, size_t hash) {
   return UNKNOWN;
 }
 
+unsigned char goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
+  LocDirCube path[SEQUENCE_MAX_LENGTH];
+  path[0] = *ldc;
+  size_t path_length = 1;
+
+  unsigned char search(unsigned char so_far) {
+    size_t hash = (*sphere->hash_func)(path + path_length - 1);
+    unsigned char depth = goalsphere_depth(sphere, hash);
+    if (depth != UNKNOWN) {
+      return depth;
+    }
+    if (so_far >= search_depth) {
+      return UNKNOWN;
+    }
+    unsigned char min = UNKNOWN;
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
+      path[path_length] = path[path_length - 1];
+      locdir_apply_stable(path + path_length, STABLE_MOVES[i]);
+      bool in_path = false;
+      for (size_t j = 0; j < path_length; ++j) {
+        if (locdir_equals(path + j, path + path_length)) {
+          in_path = true;
+          break;
+        }
+      }
+      if (in_path) {
+        continue;
+      }
+      path_length++;
+      unsigned char child_depth = search(so_far + 1);
+      path_length--;
+      if (child_depth < min) {
+        min = child_depth;
+      }
+    }
+    if (min == UNKNOWN) {
+      return UNKNOWN;
+    }
+    return min + 1;
+  }
+
+  return search(0);
+}
+
 void update_goalsphere(GoalSphere *sphere, LocDirCube *ldc, size_t depth, size_t max_depth, bool *boundary) {
   size_t hash = (*sphere->hash_func)(ldc);
   if (depth == max_depth - 1) {
