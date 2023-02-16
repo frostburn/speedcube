@@ -801,6 +801,42 @@ void locdir_x(LocDirCube *ldc) {
   }
 }
 
+char LOCDIR_F_CORNER_LOC_TABLE[] = {0, 2, 6, 3, 4, 1, 5, 7};
+char LOCDIR_F_CORNER_DIR_TABLE[] = {0, 1, 2, 1, 2, 0, 1, 2, 0, 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2, 0, 0, 1, 2};
+char LOCDIR_F_EDGE_LOC_TABLE[] = {0, 6, 2, 3, 4, 1, 9, 7, 8, 5, 10, 11};
+bool LOCDIR_F_EDGE_DIR_TABLE[] = {0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+
+void locdir_F(LocDirCube *ldc) {
+  for (size_t i = 0; i < 8; ++i) {
+    char loc = ldc->corner_locs[i];
+    ldc->corner_locs[i] = LOCDIR_F_CORNER_LOC_TABLE[loc];
+    ldc->corner_dirs[i] = LOCDIR_F_CORNER_DIR_TABLE[ldc->corner_dirs[i] + 3 * loc];
+  }
+  for (size_t i = 0; i < 12; ++i) {
+    char loc = ldc->edge_locs[i];
+    ldc->edge_locs[i] = LOCDIR_F_EDGE_LOC_TABLE[loc];
+    ldc->edge_dirs[i] = LOCDIR_F_EDGE_DIR_TABLE[ldc->edge_dirs[i] + 2 * loc];
+  }
+}
+
+char LOCDIR_B_CORNER_LOC_TABLE[] = {4, 1, 2, 0, 7, 5, 6, 3};
+char LOCDIR_B_CORNER_DIR_TABLE[] = {1, 2, 0, 0, 1, 2, 0, 1, 2, 1, 2, 0, 1, 2, 0, 0, 1, 2, 0, 1, 2, 0, 1, 2};
+char LOCDIR_B_EDGE_LOC_TABLE[] = {0, 1, 2, 4, 11, 5, 6, 3, 8, 9, 10, 7};
+bool LOCDIR_B_EDGE_DIR_TABLE[] = {0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+
+void locdir_B(LocDirCube *ldc) {
+  for (size_t i = 0; i < 8; ++i) {
+    char loc = ldc->corner_locs[i];
+    ldc->corner_locs[i] = LOCDIR_B_CORNER_LOC_TABLE[loc];
+    ldc->corner_dirs[i] = LOCDIR_B_CORNER_DIR_TABLE[ldc->corner_dirs[i] + 3 * loc];
+  }
+  for (size_t i = 0; i < 12; ++i) {
+    char loc = ldc->edge_locs[i];
+    ldc->edge_locs[i] = LOCDIR_B_EDGE_LOC_TABLE[loc];
+    ldc->edge_dirs[i] = LOCDIR_B_EDGE_DIR_TABLE[ldc->edge_dirs[i] + 2 * loc];
+  }
+}
+
 /* Unoptimized basic operations */
 
 void locdir_U_prime(LocDirCube *ldc) {
@@ -878,36 +914,24 @@ void locdir_z2(LocDirCube *ldc) {
   locdir_y(ldc);
 }
 
-void locdir_F(LocDirCube *ldc) {
-  locdir_y_prime(ldc);
-  locdir_R(ldc);
-  locdir_y(ldc);
-}
 void locdir_F_prime(LocDirCube *ldc) {
-  locdir_y(ldc);
-  locdir_L_prime(ldc);
-  locdir_y_prime(ldc);
+  locdir_F(ldc);
+  locdir_F(ldc);
+  locdir_F(ldc);
 }
 void locdir_F2(LocDirCube *ldc) {
-  locdir_y_prime(ldc);
-  locdir_R2(ldc);
-  locdir_y(ldc);
+  locdir_F(ldc);
+  locdir_F(ldc);
 }
 
-void locdir_B(LocDirCube *ldc) {
-  locdir_y(ldc);
-  locdir_R(ldc);
-  locdir_y_prime(ldc);
-}
 void locdir_B_prime(LocDirCube *ldc) {
-  locdir_y_prime(ldc);
-  locdir_L_prime(ldc);
-  locdir_y(ldc);
+  locdir_B(ldc);
+  locdir_B(ldc);
+  locdir_B(ldc);
 }
 void locdir_B2(LocDirCube *ldc) {
-  locdir_y(ldc);
-  locdir_R2(ldc);
-  locdir_y_prime(ldc);
+  locdir_B(ldc);
+  locdir_B(ldc);
 }
 
 void locdir_M(LocDirCube *ldc) {
