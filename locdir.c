@@ -1260,6 +1260,19 @@ void locdir_apply(LocDirCube *ldc, enum move move) {
   }
 }
 
+void locdir_apply_sequence(LocDirCube *ldc, sequence seq) {
+  sequence reversed = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  seq = reversed;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    locdir_apply(ldc, seq % NUM_MOVES);
+    seq /= NUM_MOVES;
+  }
+}
+
 /* Rotate the cube so that the centers are in the standard position. */
 void locdir_realign(LocDirCube *ldc) {
   // Move white to the bottom
