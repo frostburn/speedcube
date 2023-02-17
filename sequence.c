@@ -364,3 +364,130 @@ int sequence_length(sequence seq) {
   }
   return result;
 }
+
+enum move parse_move(char chr) {
+  switch (chr) {
+    case 'U':
+      return U;
+    case 'D':
+      return D;
+    case 'R':
+      return R;
+    case 'L':
+      return L;
+    case 'F':
+      return F;
+    case 'B':
+      return B;
+    case 'u':
+      return u;
+    case 'd':
+      return d;
+    case 'r':
+      return r;
+    case 'l':
+      return l;
+    case 'f':
+      return f;
+    case 'b':
+      return b;
+    case 'M':
+      return M;
+    case 'E':
+      return E;
+    case 'S':
+      return S;
+  }
+  fprintf(stderr, "Unrecognized character %c\n", chr);
+  exit(EXIT_FAILURE);
+}
+
+enum move parse_prime(char chr) {
+  switch (chr) {
+    case 'U':
+      return U_prime;
+    case 'D':
+      return D_prime;
+    case 'R':
+      return R_prime;
+    case 'L':
+      return L_prime;
+    case 'F':
+      return F_prime;
+    case 'B':
+      return B_prime;
+    case 'u':
+      return u_prime;
+    case 'd':
+      return d_prime;
+    case 'r':
+      return r_prime;
+    case 'l':
+      return l_prime;
+    case 'f':
+      return f_prime;
+    case 'b':
+      return b_prime;
+    case 'M':
+      return M_prime;
+    case 'E':
+      return E_prime;
+    case 'S':
+      return S_prime;
+  }
+  fprintf(stderr, "Unrecognized character %c\n", chr);
+  exit(EXIT_FAILURE);
+}
+
+enum move parse_double(char chr) {
+  switch (chr) {
+    case 'U':
+      return U2;
+    case 'D':
+      return D2;
+    case 'R':
+      return R2;
+    case 'L':
+      return L2;
+    case 'F':
+      return F2;
+    case 'B':
+      return B2;
+    case 'u':
+      return u2;
+    case 'd':
+      return d2;
+    case 'r':
+      return r2;
+    case 'l':
+      return l2;
+    case 'f':
+      return f2;
+    case 'b':
+      return b2;
+    case 'M':
+      return M2;
+    case 'E':
+      return E2;
+    case 'S':
+      return S2;
+  }
+  fprintf(stderr, "Unrecognized character %c\n", chr);
+  exit(EXIT_FAILURE);
+}
+
+sequence parse(char *string) {
+  if (string[0] == '\0') {
+    return I;
+  }
+  if (string[0] == ' ') {
+    return parse(string + 1);
+  }
+  if (string[1] == '\'') {
+    return concat(parse_prime(string[0]), parse(string + 2));
+  }
+  if (string[1] == '2') {
+    return concat(parse_double(string[0]), parse(string + 2));
+  }
+  return concat(parse_move(string[0]), parse(string + 1));
+}
