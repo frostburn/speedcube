@@ -60,3 +60,27 @@ void ida_star_solve(IDAstar *ida, LocDirCube *ldc) {
     bound = search_result;
   }
 }
+
+sequence ida_to_sequence(IDAstar *ida) {
+  if (ida->path_length < 1) {
+    return INVALID;
+  }
+  LocDirCube ldc = ida->path[0];
+
+  sequence seq = I;
+
+  for (size_t i = 0; i < ida->path_length; ++i) {
+    for (enum move m = U; m < MAX_MOVE; ++m) {
+      LocDirCube child = ldc;
+      locdir_apply(&child, m);
+      locdir_realign(&child);
+      if (locdir_equals(&child, ida->path + i)) {
+        seq = m + NUM_MOVES * seq;
+        locdir_apply(&ldc, m);
+        break;
+      }
+    }
+  }
+
+  return seq;
+}

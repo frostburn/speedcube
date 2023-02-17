@@ -669,18 +669,26 @@ void solve_3x3x3() {
   LocDirCube ldc;
   locdir_reset(&ldc);
 
-  printf("Solving a few scrambles...\n");
-  for (size_t j = 0; j < 5; j++) {
-    locdir_scramble(&ldc);
+  printf("Solving a few easy scrambles...\n");
+  for (size_t j = 0; j < 10; j++) {
+    // locdir_scramble(&ldc);
+    locdir_reset(&ldc);
+    for (size_t i = 0; i < 13; ++i) {
+      locdir_apply_stable(&ldc, STABLE_MOVES[rand() % NUM_STABLE_MOVES]);
+    }
 
     ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
 
     printf("Found a solution in %zu moves:\n", GLOBAL_SOLVER.ida.path_length - 1);
 
-    for (size_t i = 0; i < GLOBAL_SOLVER.ida.path_length; ++i) {
-      Cube cube = to_cube(GLOBAL_SOLVER.ida.path + i);
-      render(&cube);
-    }
+    sequence solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
+    print_sequence(solution);
+    Cube cube = to_cube(GLOBAL_SOLVER.ida.path);
+    render(&cube);
+    apply_sequence(&cube, solution);
+    printf("Becomes:\n");
+    render(&cube);
+    printf("\n");
   }
 
   /*
