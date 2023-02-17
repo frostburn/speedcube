@@ -22,7 +22,7 @@ void oll_svg(Cube *cube) {
   printf(" <g fill=\"gray\" stroke=\"black\" stroke-width=\"1.1\">\n");
   for (int i = 0; i < 3; ++i) {
     // B band
-    p = 1ULL << (3*9 + i);
+    p = 1ULL << (3*9 + 2 - i);
     fill = (yellow & p) ? "yellow" : "gray";
     printf("  <rect x=\"%g\" y=\"1\" width=\"25\" height=\"10\" fill=\"%s\" />\n", 10.5 + 26 * i, fill);
     // F band
@@ -34,13 +34,13 @@ void oll_svg(Cube *cube) {
     fill = (yellow & p) ? "yellow" : "gray";
     printf("  <rect x=\"1\" y=\"%g\" width=\"10\" height=\"25\" fill=\"%s\" />\n", 10.5 + 26 * i, fill);
     // R band
-    p = 1ULL << (2*9 + i);
+    p = 1ULL << (2*9 + 2 - i);
     fill = (yellow & p) ? "yellow" : "gray";
     printf("  <rect x=\"87\" y=\"%g\" width=\"10\" height=\"25\" fill=\"%s\" />\n", 10.5 + 26 * i, fill);
   }
   printf(" </g>\n");
 
-  printf(" <g fill=\"gray\" stroke=\"black\" stroke-width=\"2.1\">\n");
+  printf(" <g stroke=\"black\" stroke-width=\"2.1\">\n");
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
       // U face
@@ -139,6 +139,7 @@ int main() {
   printf("</head>\n");
   printf("<body>\n");
   printf("<p>OLL (Orientation of the Last Layer) solves the top color of the last layer.</p>\n");
+  printf("<p>Next step: <a href=\"pll.html\">PLL</a></p>\n");
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
   printf("<table>\n");
 
