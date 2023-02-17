@@ -727,6 +727,8 @@ void solve_3x3x3() {
 
 
 void pll_solutions() {
+  prepare_global_solver();
+
   FILE *fptr;
 
   printf("Loading database for the last 6 moves.\n");
@@ -809,7 +811,14 @@ void pll_solutions() {
     rotate_x_prime(&cube);
     sequence solution = goalsphere_solve(&sphere, cases + i, search_depth);
     if (solution == INVALID) {
-      printf("Not solvable in %zu moves or less.\n", sphere.num_sets - 1 + search_depth);
+      printf("Not solvable in %zu moves or less. Switching to IDA*...\n", sphere.num_sets - 1 + search_depth);
+
+      ida_star_solve(&GLOBAL_SOLVER.ida, cases + i);
+
+      printf("Found a solution in %zu moves:\n", GLOBAL_SOLVER.ida.path_length - 1);
+
+      solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
+      print_sequence(solution);
     } else {
       num_solvable++;
       int depth = sequence_length(solution);
@@ -824,10 +833,12 @@ void pll_solutions() {
     printf("\n");
   }
 
-  printf("%zu of %zu are solvable with given resources.\n", num_solvable, num_cases);
+  printf("Done\n");
+  printf("%zu of %zu were solved with the most comfortable solution.\n", num_solvable, num_cases);
 
   free(cases);
   free_goalsphere(&sphere);
+  free_global_solver();
 }
 
 void oll_solutions() {
@@ -962,9 +973,9 @@ int main() {
 
   // solve_edges();
 
-  solve_3x3x3();
+  // solve_3x3x3();
 
-  // pll_solutions();
+  pll_solutions();
 
   // oll_solutions();
 
