@@ -517,8 +517,9 @@ int main() {
   printf("<title>Shortest PLL algorithms (slice turn metric)</title>\n");
   printf("<style>\n");
   printf("table, th, td {border: 1px solid;}\n");
+  printf("td {text-align:center; padding:0.5em;}\n");
   printf("table {border-collapse: collapse;}\n");
-  printf("td.case {width:100px; height:100px;}\n");
+  printf("td.case {width:100px; height:100px; padding:0;}\n");
   printf("</style>\n");
   printf("</head>\n");
   printf("<body>\n");
@@ -532,6 +533,7 @@ int main() {
   printf("<th>Case</th>\n");
   printf("<th>Algorithm</th>\n");
   printf("<th>Move count</th>\n");
+  printf("<th>Move complexity</th>\n");
   printf("<th>Solver</th>\n");
   printf("</tr>\n");
 
@@ -642,6 +644,7 @@ int main() {
       print_sequence(solution);
       printf("</td>\n");
       printf("<td>%d</td>\n", sequence_length(solution));
+      printf("<td>%d</td>\n", sequence_complexity(solution));
       printf("<td>%s</td>\n", solver);
       printf("</tr>\n");
 
