@@ -91,7 +91,7 @@ void populate_nibblebase(Nibblebase *tablebase, LocDirCube *ldc) {
   }
 }
 
-sequence nibble_solution_(Nibblebase *tablebase, LocDirCube *ldc) {
+sequence nibble_solve_(Nibblebase *tablebase, LocDirCube *ldc) {
   if (visit(tablebase, (*tablebase->index_func)(ldc))) {
     return INVALID;
   }
@@ -124,7 +124,7 @@ sequence nibble_solution_(Nibblebase *tablebase, LocDirCube *ldc) {
   sequence solution = INVALID;
   for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
     if (best[i]) {
-      sequence candidate = concat(STABLE_MOVES[i], nibble_solution_(tablebase, children + i));
+      sequence candidate = concat(STABLE_MOVES[i], nibble_solve_(tablebase, children + i));
       if (is_better(candidate, solution)) {
         solution = candidate;
       }
@@ -133,7 +133,7 @@ sequence nibble_solution_(Nibblebase *tablebase, LocDirCube *ldc) {
   return solution;
 }
 
-sequence nibble_solution(Nibblebase *tablebase, LocDirCube *ldc) {
+sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc) {
   size_t index = (*tablebase->index_func)(ldc);
   unsigned char depth = get_nibble(tablebase, index);
   if (depth == 0) {
@@ -142,5 +142,5 @@ sequence nibble_solution(Nibblebase *tablebase, LocDirCube *ldc) {
   for (size_t i = 0; i < tablebase->num_visits; ++i) {
     tablebase->visits[i] = 0;
   }
-  return nibble_solution_(tablebase, ldc);
+  return nibble_solve_(tablebase, ldc);
 }

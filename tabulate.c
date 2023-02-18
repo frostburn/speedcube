@@ -6,8 +6,6 @@
 #include "cube.c"
 #include "moves.c"
 #include "sequence.c"
-#include "bst.c"
-#include "indexer.c"
 #include "locdir.c"
 #include "tablebase.c"
 #include "goalsphere.c"
@@ -200,13 +198,15 @@ int main() {
 
   create_first_edges_tablebase();
   create_last_edges_tablebase();
-  create_edge_sphere();
+
+  // create_edge_sphere();
+
   printf("Edges done.\n");
   printf("\n");
 
   create_3x3x3_sphere();
 
-  create_oll_sphere();
+  // create_oll_sphere();
 
   return EXIT_SUCCESS;
 }

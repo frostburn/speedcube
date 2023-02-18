@@ -759,3 +759,77 @@ void compensate(Cube *cube, enum move move) {
       break;
   }
 }
+
+/* Cube utilities */
+
+void scramble(Cube *cube) {
+  for (int i = 0; i < 100; ++i) {
+    int r = rand() % 6;
+    switch(r) {
+      case 0:
+        turn_U(cube);
+        break;
+      case 1:
+        turn_D(cube);
+        break;
+      case 2:
+        turn_R(cube);
+        break;
+      case 3:
+        turn_L(cube);
+        break;
+      case 4:
+        turn_F(cube);
+        break;
+      case 5:
+        turn_B(cube);
+        break;
+    }
+  }
+}
+
+void roll(Cube *cube) {
+  for (int i = 0; i < 100; ++i) {
+    int r = rand() % 2;
+    switch(r) {
+      case 0:
+        rotate_y_prime(cube);
+        break;
+      case 1:
+        rotate_x(cube);
+        break;
+    }
+  }
+}
+
+bool is_last_layer(Cube *cube) {
+  if (is_top_layer(cube)) {
+    return true;
+  }
+
+  Cube clone = *cube;
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+
+  rotate_y_prime(&clone);
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  rotate_x(&clone);
+  rotate_x(&clone);
+  if (is_top_layer(&clone)) {
+    return true;
+  }
+  return false;
+}
