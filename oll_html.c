@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "time.h"
 #include "stdbool.h"
+#include "assert.h"
 
 #include "cube.c"
 #include "moves.c"
@@ -55,12 +56,16 @@ void oll_svg(Cube *cube) {
 }
 
 int main() {
+  size_t radius = 7;
+  size_t search_depth = 4;
+
   LocDirCube root;
-  fprintf(stderr, "Generating an OLL goal sphere of radius 7.\n");
+  fprintf(stderr, "Generating an OLL goal sphere of radius %zu.\n", radius);
   locdir_reset(&root);
-  GoalSphere sphere = init_goalsphere(&root, 7, &locdir_oll_index);
+  GoalSphere sphere = init_goalsphere(&root, radius, &locdir_oll_index);
 
   char *algos[] = {
+    "",
     "R U2 R2 F R F' U2 R' F R F'",
     "r U r' U2 r U2 R' U2 R U' r'",
     "r' R2 U R' U r U2 r' U M'",
@@ -120,13 +125,70 @@ int main() {
     "R U R' U' M' U R U' r'",
   };
 
+  size_t num_algos = sizeof(algos) / sizeof(char*);
+
+  fprintf(stderr, "Generating OLL cases...\n");
+
+  // LocDirCube *cases = malloc(216 * sizeof(LocDirCube));
+  size_t *witnesses = malloc(216 * sizeof(size_t));
+  Cube *replicas = malloc(216 * sizeof(Cube));
+  size_t num_cases = 0;
+
+  void generate(LocDirCube *ldc, Cube *replica, size_t depth) {
+    Cube cube = to_cube(ldc);
+    if (is_yellow_layer(&cube)) {
+      size_t index = locdir_oll_index(ldc);
+      for (size_t i = 0; i < num_cases; ++i) {
+        if (index == witnesses[i]) {
+          return;
+        }
+      }
+      witnesses[num_cases] = index;
+      replicas[num_cases] = *replica;
+      // cases[num_cases] = *ldc;
+      num_cases++;
+    }
+    if (depth <= 0) {
+      return;
+    }
+
+    LocDirCube child = *ldc;
+    locdir_U(&child);
+    Cube child_replica = *replica;
+    turn_U(&child_replica);
+    generate(&child, &child_replica, depth - 1);
+
+    child = *ldc;
+    locdir_F(&child);
+    locdir_R(&child);
+    locdir_U(&child);
+    locdir_R_prime(&child);
+    locdir_U_prime(&child);
+    locdir_F_prime(&child);
+    child_replica = *replica;
+    turn_F(&child_replica);
+    turn_R(&child_replica);
+    turn_U(&child_replica);
+    turn_R_prime(&child_replica);
+    turn_U_prime(&child_replica);
+    turn_F_prime(&child_replica);
+    generate(&child, &child_replica, depth - 1);
+  }
+
+  locdir_reset(&root);
+  Cube root_replica;
+  reset_oll(&root_replica);
+  generate(&root, &root_replica, 140);
+
+  fprintf(stderr, "%zu OLL cases generated\n", num_cases);
+
   Cube cube;
   Cube u_variant;
   Cube u2_variant;
   Cube u_prime_variant;
   LocDirCube ldc;
   sequence setup;
-  size_t search_depth = 4;
+  size_t index;
 
   printf("<html>\n");
   printf("<head>\n");
@@ -147,30 +209,44 @@ int main() {
   printf("<th>Name</th>\n");
   printf("<th>Case</th>\n");
   printf("<th>Algorithm</th>\n");
+  printf("<th>Move count</th>\n");
   printf("</tr>\n");
 
   size_t total = 0;
 
-  for (size_t i = 0; i < 57; ++i) {
-    fprintf(stderr, "Solving case %zu\n", i + 1);
+  for (size_t i = 0; i < num_algos; ++i) {
+    fprintf(stderr, "Solving case %zu\n", i);
     setup = invert(parse(algos[i]));
     reset_oll(&cube);
     apply_sequence(&cube, setup);
 
     printf("<tr>\n");
-    printf("<td>%zu</td>\n", i + 1);
+    printf("<td>%zu</td>\n", i);
     printf("<td class=\"case\">\n");
     oll_svg(&cube);
     printf("</td>\n");
 
     locdir_reset(&ldc);
     locdir_apply_sequence(&ldc, setup);
+
     sequence solution = goalsphere_solve(&sphere, &ldc, search_depth);
     printf("<td>\n");
     print_sequence(solution);
     printf("</td>\n");
-
+    printf("<td>%d</td>\n", sequence_length(solution));
     printf("</tr>\n");
+
+    index = locdir_oll_index(&ldc);
+    for (size_t j = 0; j < num_cases; ++j) {
+      if (witnesses[j] == index) {
+        for (;j < num_cases - 1; ++j) {
+          witnesses[j] = witnesses[j + 1];
+        }
+        num_cases--;
+        break;
+      }
+    }
+    fprintf(stderr, "%zu = %zu @ %d\n", index, i, sequence_length(solution));
 
     total++;
 
@@ -178,7 +254,7 @@ int main() {
     turn_U(&u_variant);
     if (!equals(&cube, &u_variant)) {
       printf("<tr>\n");
-      printf("<td>%zu U</td>\n", i + 1);
+      printf("<td>%zu U</td>\n", i);
       printf("<td class=\"case\">\n");
       oll_svg(&u_variant);
       printf("</td>\n");
@@ -190,15 +266,27 @@ int main() {
       printf("<td>\n");
       print_sequence(solution);
       printf("</td>\n");
-
+      printf("<td>%d</td>\n", sequence_length(solution));
       printf("</tr>\n");
+
+      index = locdir_oll_index(&ldc);
+      for (size_t j = 0; j < num_cases; ++j) {
+        if (witnesses[j] == index) {
+          for (;j < num_cases - 1; ++j) {
+            witnesses[j] = witnesses[j + 1];
+          }
+          num_cases--;
+          break;
+        }
+      }
+      fprintf(stderr, "%zu = %zu U @ %d\n", index, i, sequence_length(solution));
       total++;
     }
     u2_variant = cube;
     turn_U2(&u2_variant);
     if (!equals(&cube, &u2_variant) && !equals(&u_variant, &u2_variant)) {
       printf("<tr>\n");
-      printf("<td>%zu U2</td>\n", i + 1);
+      printf("<td>%zu U2</td>\n", i);
       printf("<td class=\"case\">\n");
       oll_svg(&u2_variant);
       printf("</td>\n");
@@ -210,15 +298,27 @@ int main() {
       printf("<td>\n");
       print_sequence(solution);
       printf("</td>\n");
-
+      printf("<td>%d</td>\n", sequence_length(solution));
       printf("</tr>\n");
+
+      index = locdir_oll_index(&ldc);
+      for (size_t j = 0; j < num_cases; ++j) {
+        if (witnesses[j] == index) {
+          for (;j < num_cases - 1; ++j) {
+            witnesses[j] = witnesses[j + 1];
+          }
+          num_cases--;
+          break;
+        }
+      }
+      fprintf(stderr, "%zu = %zu U2 @ %d\n", index, i, sequence_length(solution));
       total++;
     }
     u_prime_variant = cube;
     turn_U_prime(&u_prime_variant);
     if (!equals(&cube, &u_prime_variant) && !equals(&u_variant, &u_prime_variant) && !equals(&u_prime_variant, &u2_variant)) {
       printf("<tr>\n");
-      printf("<td>%zu U'</td>\n", i + 1);
+      printf("<td>%zu U'</td>\n", i);
       printf("<td class=\"case\">\n");
       oll_svg(&u_prime_variant);
       printf("</td>\n");
@@ -230,11 +330,25 @@ int main() {
       printf("<td>\n");
       print_sequence(solution);
       printf("</td>\n");
-
+      printf("<td>%d</td>\n", sequence_length(solution));
       printf("</tr>\n");
+
+      index = locdir_oll_index(&ldc);
+      for (size_t j = 0; j < num_cases; ++j) {
+        if (witnesses[j] == index) {
+          for (;j < num_cases - 1; ++j) {
+            witnesses[j] = witnesses[j + 1];
+          }
+          num_cases--;
+          break;
+        }
+      }
+      fprintf(stderr, "%zu = %zu U' @ %d\n", index, i, sequence_length(solution));
       total++;
     }
   }
+
+  assert(num_cases == 0);
 
   printf("</table>\n");
 
