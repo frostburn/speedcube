@@ -71,7 +71,7 @@ void prepare_global_solver() {
   }
   fclose(fptr);
 
-  GLOBAL_SOLVER.ida.is_solved = locdir_solved;
+  GLOBAL_SOLVER.ida.is_solved = locdir_centerless_solved;
   GLOBAL_SOLVER.ida.estimator = global_estimator;
 }
 

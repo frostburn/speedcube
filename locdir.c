@@ -69,6 +69,11 @@ bool locdir_equals(LocDirCube *a, LocDirCube *b) {
       return false;
     }
   }
+  for (char i = 0; i < 6; ++i) {
+    if (a->center_locs[i] != b->center_locs[i]) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -84,7 +89,7 @@ bool locdir_edges_solved(LocDirCube *ldc) {
   return true;
 }
 
-bool locdir_solved(LocDirCube *ldc) {
+bool locdir_centerless_solved(LocDirCube *ldc) {
   for (char i = 0; i < 8; ++i) {
     if (ldc->corner_locs[i] != i) {
       return false;
@@ -94,6 +99,15 @@ bool locdir_solved(LocDirCube *ldc) {
     }
   }
   return locdir_edges_solved(ldc);
+}
+
+bool locdir_solved(LocDirCube *ldc) {
+  for (char i = 0; i < 6; ++i) {
+    if (ldc->corner_locs[i] != i) {
+      return false;
+    }
+  }
+  return locdir_centerless_solved(ldc);
 }
 
 size_t locdir_corner_index(LocDirCube *ldc) {
