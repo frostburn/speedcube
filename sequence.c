@@ -354,6 +354,15 @@ bool is_better(sequence a, sequence b) {
   return lexicographic;
 }
 
+int sequence_complexity(sequence seq) {
+  int result = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    result += seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  return result;
+}
+
 int sequence_length(sequence seq) {
   int result = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {

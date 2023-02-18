@@ -6,28 +6,32 @@ enum move {
 
   U, U_prime,
   R, R_prime,
-  F, F_prime,
-
-  M,
-
-  U2, R2, F2,
-  M2,
-
-  f, f_prime, f2,
-  r, r_prime, r2,
 
   M_prime,
+
+  F,
+
+  U2, R2,
+  M2, F2,
+  F_prime,
+
+  r, r_prime, r2,
+  u, u_prime, u2,
+  f, f_prime, f2,
 
   D, D_prime, D2,
 
   L, L_prime, L2,
-  B, B_prime, B2,
 
-  E, E_prime, E2,
-
-  u, u_prime, u2,
   l, l_prime, l2,
   d, d_prime, d2,
+
+  M,
+
+  B, B_prime, B2,
+
+  E, E2, E_prime,
+
   S, S_prime, S2,
   b, b_prime, b2
 };

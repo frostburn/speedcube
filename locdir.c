@@ -993,22 +993,27 @@ void locdir_S2(LocDirCube *ldc) {
 enum move STABLE_MOVES[] = {
   U, U_prime,
   R, R_prime,
-  F, F_prime,
-
-  M,
-
-  U2, R2, F2,
-  M2,
 
   M_prime,
+
+  F,
+
+  U2, R2,
+  M2, F2,
+  F_prime,
+
 
   D, D_prime, D2,
 
   L, L_prime, L2,
+
+  M,
+
   B, B_prime, B2,
 
-  E, E_prime, E2,
-  S, S_prime, S2,
+  E, E2, E_prime,
+
+  S, S_prime, S2
 };
 
 void locdir_apply_stable(LocDirCube *ldc, enum move move) {
