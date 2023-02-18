@@ -8,8 +8,6 @@
 #include "cube.c"
 #include "moves.c"
 #include "sequence.c"
-#include "bst.c"
-#include "indexer.c"
 #include "locdir.c"
 #include "tablebase.c"
 #include "goalsphere.c"
