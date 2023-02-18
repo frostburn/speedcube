@@ -1,7 +1,5 @@
 // Locations and directions/orientations of cubies
 
-// TODO: Implement centers
-
 typedef struct {
   char corner_locs[8];
   char corner_dirs[8];

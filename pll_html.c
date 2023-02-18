@@ -3,6 +3,7 @@
 #include "time.h"
 #include "stdbool.h"
 #include "math.h"
+#include "assert.h"
 
 #include "cube.c"
 #include "moves.c"
@@ -47,6 +48,7 @@ char *sticker_fill(Cube *cube, bitboard p) {
   return "black";
 }
 
+/* Display the F face as blue. */
 char *jperm_sticker_fill(Cube *cube, bitboard p) {
   bitboard red = cube->a & ~cube->b & ~cube->c;
   bitboard green = ~cube->a & cube->b & ~cube->c;
@@ -226,69 +228,250 @@ void pll_svg(LocDirCube *ldc) {
 int main() {
   prepare_global_solver();
 
+  size_t search_depth = 4;
+
   LocDirCube root;
-  fprintf(stderr, "Generating a PLL goal sphere of radius 6.\n");
+  /*
+  size_t radius = 7;
+  fprintf(stderr, "Generating a PLL goal sphere of radius %zu.\n", radius);
   locdir_reset(&root);
-  GoalSphere sphere = init_goalsphere(&root, 6, &locdir_centerless_hash);
+  GoalSphere sphere = init_goalsphere(&root, radius, &locdir_centerless_hash);
+  */
+
+  fprintf(stderr, "Loading database for the last 6 moves.\n");
+  GoalSphere sphere;
+  sphere.hash_func = locdir_centerless_hash;
+  sphere.num_sets = 6 + 1;
+  sphere.sets = malloc(sphere.num_sets * sizeof(size_t*));
+  sphere.set_sizes = malloc(sphere.num_sets * sizeof(size_t));
+  sphere.set_sizes[0] = 1;
+  sphere.set_sizes[1] = 27;
+  sphere.set_sizes[2] = 501;
+  sphere.set_sizes[3] = 9175;
+  sphere.set_sizes[4] = 164900;
+  sphere.set_sizes[5] = 2912447;
+  sphere.set_sizes[6] = 50839041;
+  FILE *fptr = fopen("./tables/centerless_sphere.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  for (size_t i = 0; i < sphere.num_sets; ++i) {
+    sphere.sets[i] = malloc(sphere.set_sizes[i] * sizeof(size_t));
+    size_t num_read = fread(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
+    if (num_read != sphere.set_sizes[i]) {
+      fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, sphere.set_sizes[i]);
+      exit(EXIT_FAILURE);
+    }
+  }
+  fclose(fptr);
 
   char *names[] = {
     "Aa",
+    "Aa y",
+    "Aa y2",
+    "Aa y'",
+
     "Ab",
+    "Ab y",
+    "Ab y2",
+    "Ab y'",
+
     "F",
+    "F y",
+    "F y2",
+    "F y'",
+
     "Ga",
+    "Ga y",
+    "Ga y2",
+    "Ga y'",
+
     "Gb",
+    "Gb y",
+    "Gb y2",
+    "Gb y'",
+
     "Gc",
+    "Gc y",
+    "Gc y2",
+    "Gc y'",
+
     "Gd",
+    "Gd y",
+    "Gd y2",
+    "Gd y'",
+
     "Ja",
+    "Ja y",
+    "Ja y2",
+    "Ja y'",
+
     "Jb",
+    "Jb y",
+    "Jb y2",
+    "Jb y'",
+
     "Ra",
+    "Ra y",
+    "Ra y2",
+    "Ra y'",
+
     "Rb",
+    "Rb y",
+    "Rb y2",
+    "Rb y'",
+
     "T",
+    "T y",
+    "T y2",
+    "T y'",
+
     "E",
+    "E y",
+
     "Na",
+
     "Nb",
+
     "V",
+    "V y",
+    "V y2",
+    "V y'",
+
     "Y",
+    "Y y",
+    "Y y2",
+    "Y y'",
+
     "H",
+
     "Ua",
-    "Ua'",
+    "Ua y",
+    "Ua y2",
+    "Ua y'",
+
     "Ub",
-    "Ub'",
+    "Ub y",
+    "Ub y2",
+    "Ub y'",
+
     "Z",
+    "Z y",
+
+    "O",
   };
 
   char *algos[] = {
-    /*x*/ "L2 D2 L' U' L D2 L' U L'" /*x'*/,
-    /*x'*/ "L2 D2 L U L' D2 L U' L" /*x*/,
-    "R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",
-    "R2 U R' U R' U' R U' R2 U' D R' U R D'",
-    "R' U' R U D' R2 U R' U R U' R U' R2 D",
-    "R2 U' R U' R U R' U R2 U D' R U' R' D",
-    "R U R' U' D R2 U' R U' R' U R' U R2 D'",
-    /*x*/ "R2 F R F' R U2 r' U r U2" /*x'*/,
-    "R U R' F' R U R' U' R' F R2 U' R'",
-    "R U' R' U' R U R D R' U' R D' R' U2 R'",
-    "R2 F R U R U' R' F' R U2 R' U2 R",
-    "R U R' U' R' F R2 U' R' U' R U R' F'",
-    /*x'*/ "L' U L D' L' U' L D L' U' L D' L' U L D",
-    "R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'",
-    "R' U R U' R' F' U' F R U R' F R' F' R U' R",
-    /*R' U R' U' y*/ "R' F' R2 U' R' U R' F R F",
-    "F R U' R' U' R U R' F' R U R' U' R' F R F'",
-    "M2 U M2 U2 M2 U M2",
-    "M2 U M U2 M' U M2",
-    "M2 U M' U2 M U M2",
-    "M2 U' M U2 M' U' M2",
-    "L2 d M' U2 M U F2",
-    "M' U M2 U M2 U M' U2 M2",
+    "f' U f' R2 f U' f' R2 f2", // Aa
+    "R' F R' f2 r U' r' f2 R2",  // Aa y
+    "R2 F2 R' f' U F2 U' f R'",  // Aa y2
+    "F2 r2 f' U' f r2 F' R F'",  // Aa y'
+
+    "r2 f2 R F R' B2 R F' R",  // Ab
+    "R2 f2 r U r' f2 R F' R",  // Ab y
+    "R f' U F2 U' f R F2 R2",  // Ab y2
+    "f2 R2 f U f' R2 f U' f",  // Ab y'
+
+    "U M U2 r' U R' F2 r F' R' M' F2 R2",  // F
+    "U r2 f2 r R2 f' D r2 D' f R' U2 M'",  // F y
+    "U M' U2 R' F r' F2 R U' R r2 F2 r2",  // F y2
+    "U R2 f2 r' M U' R f2 R' U r' U2 M",  // F y'
+
+    "U' f2 M2 U R2 U' R2 D R2 D' r2 f2",  // Ga
+    "U' R2 S2 D f2 U' f2 U f2 D' F2 R2",  // Ga y
+    "U' F2 M2 D R2 D' R2 U R2 U' r2 F2",  // Ga y2
+    "U' r2 S2 U f2 D' f2 D f2 U' F2 r2",  // Ga y'
+
+    "U R2 F2 U R2 D' R2 D f2 D' S2 R2",  // Gb
+    "U F2 r2 D f2 D' f2 U R2 D' M2 F2",  // Gb y
+    "U r2 F2 D r2 D' r2 U f2 U' S2 r2",  // Gb y2
+    "U f2 r2 U F2 D' F2 D R2 U' M2 f2",  // Gb y'
+
+    "U F2 M2 D' r2 U r2 U' r2 D R2 F2",  // Gc
+    "U r2 S2 U' F2 U F2 D' F2 D f2 r2",  // Gc y
+    "U f2 M2 U' r2 D r2 D' r2 U R2 f2",  // Gc y2
+    "U R2 S2 D' F2 D F2 U' F2 U f2 R2",  // Gc y'
+
+    "U' R2 f2 D' r2 D r2 U' F2 D S2 R2",  // Gd
+    "U' F2 R2 U' F2 D F2 D' r2 D M2 F2",  // Gd y
+    "U' f2 R2 D' f2 D f2 U' r2 U M2 f2",  // Gd y'
+    "U' r2 f2 U' R2 D R2 D' F2 U S2 r2",  // Gd y2
+
+    "l2 U R U' R f2 R' U R f2",  // Ja
+    "b2 U F U' F R2 f' R f R2",  // Ja y
+    "B2 R' U' R f2 R' U R' U' R2",  // Ja y2
+    "f2 U f R' f R2 F' U F R2",  // Ja y'
+
+    "R2 B U f' U2 F R' F R F2",  // Jb
+    "F2 R U R' b2 R U' R U R2",  // Jb y
+    "L2 F U F' r2 F U' F U F2",  // Jb y2
+    "l2 U' R' U R' F2 r F' r' F2",  // Jb y'
+
+    "U F U2 S R f' R' F U2 F2 U' F R",  // Ra
+    "U R U2 M' f U' r' f R2 f2 r' U f",  // Ra y
+    "U f R2 S' U F' r' U F2 U2 F' U r",  // Ra y2
+    "U M F2 R2 f' U' f R2 F' R F' U2 M'",  // Ra y'
+
+    "U F R U' R2 U2 R F' r' F M' U2 R",  // Rb
+    "U F2 r2 f U2 r D r2 D' r' S U2 F",  // Rb y
+    "U M' U2 f' U f' r2 f U' f' r2 f2 M",  // Rb y2
+    "U R f R' f2 r2 F D' f' D S r2 f",  // Rb y'
+
+    "U F2 U' F2 D R2 f2 D f2 D' R2",  // T
+    "U r2 D' r2 D F2 R2 U R2 D' F2",  // T y
+    "U f2 D' f2 D r2 f2 U f2 U' r2",  // T y2
+    "U R2 U' R2 D f2 R2 D R2 U' f2",  // T y'
+
+    "F U' f r2 F' R S' U' f r2 F' R f'",  // E
+    "R U' r F2 r' U M' f' U F2 U' f r'",  // E y
+
+    "R U2 f2 R f D' f D2 F' R F E2 r'",  // Na
+
+    "R' U2 F2 r' D' r F' D2 f D' f' E2 r",  // Nb
+
+    "R' U R' U' R D' R' D R' f2 D' f2 U R2",  // V
+    "R U D2 r' F r U2 F2 D R D' F2 D2 R'",  // V y
+    "R' U' F' S U F2 U' f' U2 r' F' R F' r",  // V y2
+    "R U F S2 R' f2 r U f2 R f U' f r'",  // V y'
+
+    "R' U' R F2 R' U R U F2 U' F2 U' F2",  // Y
+    "F' U' F R2 f' R f U f2 U' f2 U' R2",  // Y y
+    "R U R' F2 r F' r' U' r2 U r2 U F2",  // Y y'
+    "R2 U' F2 D' F2 U F D F' R2 f R' f'",  // Y y2
+
+    "M2 U M2 U2 M2 U M2",  // H
+
+    "F2 U' M' U2 M U' F2",  // Ua
+    "L2 d' M U2 M' U' f2",  // Ua y
+    "M2 U M' U2 M U M2",  // Ua y2
+    "R2 d' M' U2 M U' F2",  // Ua y'
+
+    "F2 U M' U2 M U F2",  // Ub
+    "L2 d M' U2 M U F2",  // Ub y
+    "M2 U' M' U2 M U' M2",  // Ub y2
+    "R2 d M U2 M' U f2",  // Ub y'
+
+    "M S2 M' D' M2 u M2",  // Z
+    "M S2 M' D M2 u' M2",  // Z y
+
+    "",  // O
   };
 
-  /*
-  LocDirCube *cases = malloc(96 * sizeof(LocDirCube));
+  size_t num_names = sizeof(names)/sizeof(char*);
+  size_t num_algos = sizeof(algos)/sizeof(char*);
+
+  assert(num_names == num_algos);
+
+  Cube cube;
+
+  LocDirCube *cases = malloc(288 * sizeof(LocDirCube));
   size_t num_cases = 0;
 
+  sequence Ga = parse("R2 U R' U R' U' R U' R2 U' D R' U R D'");
+
   void generate(LocDirCube *ldc, size_t depth) {
-    Cube cube = to_cube(ldc);
+    cube = to_cube(ldc);
     if (is_yellow_permutation(&cube)) {
       for (size_t i = 0; i < num_cases; ++i) {
         if (locdir_equals(ldc, cases + i)) {
@@ -313,19 +496,23 @@ int main() {
     locdir_U_prime(&child);
     locdir_F_prime(&child);
     generate(&child, depth - 1);
+
+    child = *ldc;
+    locdir_apply_sequence(&child, Ga);
+    generate(&child, depth - 1);
   }
 
+  fprintf(stderr, "Generating PLL cases...\n");
+
   locdir_reset(&root);
-  generate(&root, 20);
+  generate(&root, 14);
 
   fprintf(stderr, "%zu PLL cases generated\n", num_cases);
-  */
 
-  Cube cube;
   LocDirCube ldc;
   sequence setup;
   sequence solution;
-  size_t search_depth = 3;
+  char *solver;
 
   printf("<html>\n");
   printf("<head>\n");
@@ -339,123 +526,178 @@ int main() {
   printf("<body>\n");
   printf("<p>PLL (Permutation of the Last Layer) solves the cube after <a href=\"oll.html\">OLL</a>.</p>\n");
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
+  printf("<p>Solutions obtained using IDA* are as short as possible, but not necessarily the easiest to perform.</p>\n");
   printf("<table>\n");
 
   printf("<tr>\n");
   printf("<th>Name</th>\n");
   printf("<th>Case</th>\n");
   printf("<th>Algorithm</th>\n");
+  printf("<th>Move count</th>\n");
+  printf("<th>Solver</th>\n");
   printf("</tr>\n");
 
   size_t total = 0;
 
-  // for (size_t i = 0; i < num_cases; ++i) {
-  for (size_t i = 0; i < 23; ++i) {
+  for (size_t i = 0; i < num_algos; ++i) {
     fprintf(stderr, "Solving case %s\n", names[i]);
     setup = invert(parse(algos[i]));
     locdir_reset(&ldc);
-    if (i == 0) {
-      locdir_x(&ldc);
-    } else if (i == 1) {
-      locdir_x_prime(&ldc);
-    } else if (i == 7) {
-      locdir_x(&ldc);
-    } else if (i == 12) {
-      locdir_x_prime(&ldc);
-    } else if (i == 15) {
-      locdir_y(&ldc);
-    }
     locdir_apply_sequence(&ldc, setup);
-    if (i == 0) {
-      locdir_x_prime(&ldc);
-    } else if (i == 1) {
+    // Solutions can rotate the final result, try to figure that out...
+    if (ldc.center_locs[0] != 0) {
+      locdir_reset(&ldc);
+      locdir_y2(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[4] != 4) {
+      locdir_reset(&ldc);
+      locdir_x2(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[0] != 0) {
+      locdir_reset(&ldc);
+      locdir_z2(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[0] != 0) {
+      locdir_reset(&ldc);
+      locdir_z_prime(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[4] != 4) {
+      locdir_reset(&ldc);
       locdir_x(&ldc);
-    } else if (i == 7) {
-      locdir_x_prime(&ldc);
-    } else if (i == 12) {
+      locdir_y2(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[4] != 4) {
+      locdir_reset(&ldc);
+      locdir_y2(&ldc);
       locdir_x(&ldc);
-    } else if (i == 15) {
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[4] != 4) {
+      locdir_reset(&ldc);
+      locdir_x2(&ldc);
+      locdir_y(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[0] != 0) {
+      locdir_reset(&ldc);
       locdir_y_prime(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[4] != 4) {
+      locdir_reset(&ldc);
+      locdir_x2(&ldc);
+      locdir_y_prime(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    if (ldc.center_locs[0] != 0) {
+      locdir_reset(&ldc);
+      locdir_y(&ldc);
+      locdir_apply_sequence(&ldc, setup);
+    }
+    assert(ldc.center_locs[0] == 0 && ldc.corner_locs[4] == 4);
+
+    // Verify that generated cases match up with manual entries
+    for (size_t k = 0; k < 4; ++k) {
+      size_t j = 0;
+      for (; j < num_cases; ++j) {
+        if (locdir_equals(&ldc, cases + j)) {
+          break;
+        }
+      }
+      // cube = to_cube(&ldc);
+      // render(&cube);
+      assert(j < num_cases);
+      for (; j < num_cases - 1; ++j) {
+        cases[j] = cases[j + 1];
+      }
+      num_cases--;
       locdir_U(&ldc);
-      locdir_R(&ldc);
-      locdir_U_prime(&ldc);
-      locdir_R(&ldc);
     }
 
-    // ldc = cases[i];
+    for (size_t k = 0; k < 4; ++k) {
+      printf("<tr>\n");
+      if (k == 0) {
+        printf("<td>%s</td>\n", names[i]);
+      } else if (k == 1) {
+        printf("<td>%s U</td>\n", names[i]);
+      } else if (k == 2) {
+        printf("<td>%s U2</td>\n", names[i]);
+      } else {
+        printf("<td>%s U'</td>\n", names[i]);
+      }
+      printf("<td class=\"case\">\n");
+      pll_svg(&ldc);
+      printf("</td>\n");
+      solver = "MitM";
+      solution = goalsphere_solve(&sphere, &ldc, search_depth);
+      if (solution == INVALID) {
+        solver = "IDA*";
+        ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
+        solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
+      }
+      printf("<td>\n");
+      print_sequence(solution);
+      printf("</td>\n");
+      printf("<td>%d</td>\n", sequence_length(solution));
+      printf("<td>%s</td>\n", solver);
+      printf("</tr>\n");
 
-    printf("<tr>\n");
-    printf("<td>%s</td>\n", names[i]);
-    // printf("<td>%zu</td>", i);
-    printf("<td class=\"case\">\n");
-    pll_svg(&ldc);
-    printf("</td>\n");
-    solution = goalsphere_solve(&sphere, &ldc, search_depth);
-    if (solution == INVALID) {
-      ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
-      solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
+      total++;
+      locdir_U(&ldc);
     }
-    printf("<td>\n");
-    print_sequence(solution);
-    printf("</td>\n");
-    printf("</tr>\n");
-
-    total++;
-
-    locdir_U(&ldc);
-    printf("<tr>\n");
-    printf("<td>%s U</td>\n", names[i]);
-    printf("<td class=\"case\">\n");
-    pll_svg(&ldc);
-    printf("</td>\n");
-    solution = goalsphere_solve(&sphere, &ldc, search_depth);
-    if (solution == INVALID) {
-      ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
-      solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
-    }
-    printf("<td>\n");
-    print_sequence(solution);
-    printf("</td>\n");
-    printf("</tr>\n");
-
-    total++;
-
-    locdir_U(&ldc);
-    printf("<tr>\n");
-    printf("<td>%s U2</td>\n", names[i]);
-    printf("<td class=\"case\">\n");
-    pll_svg(&ldc);
-    printf("</td>\n");
-    solution = goalsphere_solve(&sphere, &ldc, search_depth);
-    if (solution == INVALID) {
-      ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
-      solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
-    }
-    printf("<td>\n");
-    print_sequence(solution);
-    printf("</td>\n");
-    printf("</tr>\n");
-
-    total++;
-
-    locdir_U(&ldc);
-    printf("<tr>\n");
-    printf("<td>%s U'</td>\n", names[i]);
-    printf("<td class=\"case\">\n");
-    pll_svg(&ldc);
-    printf("</td>\n");
-    solution = goalsphere_solve(&sphere, &ldc, search_depth);
-    if (solution == INVALID) {
-      ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
-      solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
-    }
-    printf("<td>\n");
-    print_sequence(solution);
-    printf("</td>\n");
-    printf("</tr>\n");
-
-    total++;
   }
+
+  /*
+  fprintf(stderr, "%zu cases remain\n", num_cases);
+  size_t i = 0;
+  while (num_cases) {
+    fprintf(stderr, "Solving extra case %zu\n", i);
+
+    ldc = cases[0];
+
+    for (size_t k = 0; k < 4; ++k) {
+      size_t j = 0;
+      for (; j < num_cases; ++j) {
+        if (locdir_equals(&ldc, cases + j)) {
+          break;
+        }
+      }
+      assert(j < num_cases);
+      for (; j < num_cases - 1; ++j) {
+        cases[j] = cases[j + 1];
+      }
+      num_cases--;
+
+      printf("<tr>\n");
+      printf("<td>%zu-%zu</td>", i, k);
+      printf("<td class=\"case\">\n");
+      pll_svg(&ldc);
+      printf("</td>\n");
+      fprintf(stderr, "Solving %zu-%zu with a goal sphere\n", i, k);
+      solution = goalsphere_solve(&sphere, &ldc, search_depth);
+      if (solution == INVALID) {
+        fprintf(stderr, "Switching to IDA*\n");
+        ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
+        solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
+      }
+      printf("<td>\n");
+      print_sequence(solution);
+      printf("</td>\n");
+      printf("</tr>\n");
+      locdir_U(&ldc);
+      total++;
+    }
+    i++;
+  }
+  */
+
+  // Make sure that everything was solved.
+  assert(num_cases == 0);
 
   printf("</table>\n");
 
@@ -465,7 +707,7 @@ int main() {
   printf("</html>\n");
 
   free_goalsphere(&sphere);
-  // free(cases);
+  free(cases);
   free_global_solver();
 
   return EXIT_SUCCESS;
