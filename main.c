@@ -37,8 +37,6 @@ void solve_3x3x3() {
   prepare_global_solver();
 
   LocDirCube ldc;
-  locdir_reset(&ldc);
-
   printf("Solving a few easy scrambles...\n");
   for (size_t j = 0; j < 10; j++) {
     // locdir_scramble(&ldc);
@@ -47,32 +45,33 @@ void solve_3x3x3() {
       locdir_apply_stable(&ldc, STABLE_MOVES[rand() % NUM_STABLE_MOVES]);
     }
 
-    ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
-
-    printf("Found a solution in %zu moves:\n", GLOBAL_SOLVER.ida.path_length - 1);
-
-    sequence solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
-    print_sequence(solution);
-    Cube cube = to_cube(GLOBAL_SOLVER.ida.path);
+    Cube cube = to_cube(&ldc);
     render(&cube);
+
+    sequence solution = global_solve(&ldc);
+
+    printf("Found a solution in %d moves:\n", sequence_length(solution));
+
+    print_sequence(solution);
     apply_sequence(&cube, solution);
     printf("Becomes:\n");
     render(&cube);
     printf("\n");
   }
 
-  /*
   printf("Collecting statistics...\n");
 
   clock_t start = clock();
-  size_t total_solves = 10;
+  size_t total_solves = 2;
   size_t total_moves = 0;
   size_t min_moves = ~0ULL;
   size_t max_moves = 0;
   for (size_t i = 0; i < total_solves; ++i) {
+    locdir_reset(&ldc);
     locdir_scramble(&ldc);
-    ida_star_solve(&ida, &ldc);
-    size_t num_moves = ida.path_length - 1;
+
+    sequence solution = global_solve(&ldc);
+    size_t num_moves = sequence_length(solution);
     total_moves += num_moves;
     if (num_moves < min_moves) {
       min_moves = num_moves;
@@ -85,12 +84,12 @@ void solve_3x3x3() {
 
   double took = end - start;
   took /= CLOCKS_PER_SEC;
+  took /= 60 * 60;
 
-  printf("Solved %zu scrambles in %g seconds (%g ms / solution).\n", total_solves, took, 1000 * took/total_solves);
+  printf("Solved %zu scrambles in %g hours (%g hours / solution).\n", total_solves, took, took/total_solves);
   printf("Minimum number of moves in a solution = %zu\n", min_moves);
   printf("Average number of moves in a solution = %g\n", ((double)total_moves) / total_solves);
   printf("Maximum number of moves in a solution = %zu\n", max_moves);
-  */
 
   free_global_solver();
 }
@@ -189,7 +188,7 @@ void pll_solutions() {
     if (solution == INVALID) {
       printf("Not solvable in %zu moves or less. Switching to IDA*...\n", sphere.num_sets - 1 + search_depth);
 
-      ida_star_solve(&GLOBAL_SOLVER.ida, cases + i);
+      ida_star_solve(&GLOBAL_SOLVER.ida, cases + i, 0);
 
       printf("Found a solution in %zu moves:\n", GLOBAL_SOLVER.ida.path_length - 1);
 
@@ -343,7 +342,7 @@ int main() {
 
   // solve_2x2x2();
 
-  // solve_3x3x3();
+  solve_3x3x3();
 
   // pll_solutions();
 

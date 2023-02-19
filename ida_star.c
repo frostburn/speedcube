@@ -46,11 +46,15 @@ unsigned char ida_star_search(IDAstar *ida, unsigned char so_far, unsigned char 
   return min;
 }
 
-void ida_star_solve(IDAstar *ida, LocDirCube *ldc) {
+void ida_star_solve(IDAstar *ida, LocDirCube *ldc, unsigned char lower_bound) {
   ida->path[0] = *ldc;
   ida->path_length = 1;
 
   unsigned char bound = (*ida->estimator)(ida->path);
+
+  if (lower_bound > bound) {
+    bound = lower_bound;
+  }
 
   for (;;) {
     unsigned char search_result = ida_star_search(ida, 0, bound);
