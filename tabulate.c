@@ -199,7 +199,7 @@ int main() {
   create_first_edges_tablebase();
   create_last_edges_tablebase();
 
-  // create_edge_sphere();
+  create_edge_sphere();
 
   printf("Edges done.\n");
   printf("\n");
