@@ -76,6 +76,11 @@ unsigned char goalsphere_depth_(GoalSphere *sphere, size_t hash) {
   return UNKNOWN;
 }
 
+bool goalsphere_shell(GoalSphere *sphere, LocDirCube *ldc) {
+  size_t last = sphere->num_sets - 1;
+  return set_has(sphere->sets[last], sphere->set_sizes[last], (*sphere->hash_func)(ldc));
+}
+
 unsigned char goalsphere_depth(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
   LocDirCube path[SEQUENCE_MAX_LENGTH];
   path[0] = *ldc;

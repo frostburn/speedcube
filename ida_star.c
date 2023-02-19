@@ -9,11 +9,12 @@ const unsigned char FOUND = 254;
 
 unsigned char ida_star_search(IDAstar *ida, unsigned char so_far, unsigned char bound) {
   LocDirCube *ldc = ida->path + (ida->path_length - 1);
-  unsigned char lower_bound = so_far + (*ida->estimator)(ldc);
+  unsigned char to_go = (*ida->estimator)(ldc);
+  unsigned char lower_bound = so_far + to_go;
   if (lower_bound > bound) {
     return lower_bound;
   }
-  if ((*ida->is_solved)(ldc)) {
+  if (to_go == 0 && (*ida->is_solved)(ldc)) {
     return FOUND;
   }
   unsigned char min = 255;

@@ -617,7 +617,7 @@ void locdir_y(LocDirCube *ldc) {
   }
   for (size_t i = 0; i < 6; ++i) {
     char loc = ldc->center_locs[i];
-    if (loc < 4) {
+    if (loc >= 0 && loc < 4) {
       ldc->center_locs[i] = (loc + 3) % 4;
     }
   }
@@ -821,13 +821,17 @@ bool LOCDIR_F_EDGE_DIR_TABLE[] = {0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1
 void locdir_F(LocDirCube *ldc) {
   for (size_t i = 0; i < 8; ++i) {
     char loc = ldc->corner_locs[i];
-    ldc->corner_locs[i] = LOCDIR_F_CORNER_LOC_TABLE[loc];
-    ldc->corner_dirs[i] = LOCDIR_F_CORNER_DIR_TABLE[ldc->corner_dirs[i] + 3 * loc];
+    if (loc >= 0) {
+      ldc->corner_locs[i] = LOCDIR_F_CORNER_LOC_TABLE[loc];
+      ldc->corner_dirs[i] = LOCDIR_F_CORNER_DIR_TABLE[ldc->corner_dirs[i] + 3 * loc];
+    }
   }
   for (size_t i = 0; i < 12; ++i) {
     char loc = ldc->edge_locs[i];
-    ldc->edge_locs[i] = LOCDIR_F_EDGE_LOC_TABLE[loc];
-    ldc->edge_dirs[i] = LOCDIR_F_EDGE_DIR_TABLE[ldc->edge_dirs[i] + 2 * loc];
+    if (loc >= 0) {
+      ldc->edge_locs[i] = LOCDIR_F_EDGE_LOC_TABLE[loc];
+      ldc->edge_dirs[i] = LOCDIR_F_EDGE_DIR_TABLE[ldc->edge_dirs[i] + 2 * loc];
+    }
   }
 }
 
@@ -839,13 +843,17 @@ bool LOCDIR_B_EDGE_DIR_TABLE[] = {0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1
 void locdir_B(LocDirCube *ldc) {
   for (size_t i = 0; i < 8; ++i) {
     char loc = ldc->corner_locs[i];
-    ldc->corner_locs[i] = LOCDIR_B_CORNER_LOC_TABLE[loc];
-    ldc->corner_dirs[i] = LOCDIR_B_CORNER_DIR_TABLE[ldc->corner_dirs[i] + 3 * loc];
+    if (loc >= 0) {
+      ldc->corner_locs[i] = LOCDIR_B_CORNER_LOC_TABLE[loc];
+      ldc->corner_dirs[i] = LOCDIR_B_CORNER_DIR_TABLE[ldc->corner_dirs[i] + 3 * loc];
+    }
   }
   for (size_t i = 0; i < 12; ++i) {
     char loc = ldc->edge_locs[i];
-    ldc->edge_locs[i] = LOCDIR_B_EDGE_LOC_TABLE[loc];
-    ldc->edge_dirs[i] = LOCDIR_B_EDGE_DIR_TABLE[ldc->edge_dirs[i] + 2 * loc];
+    if (loc >= 0) {
+      ldc->edge_locs[i] = LOCDIR_B_EDGE_LOC_TABLE[loc];
+      ldc->edge_dirs[i] = LOCDIR_B_EDGE_DIR_TABLE[ldc->edge_dirs[i] + 2 * loc];
+    }
   }
 }
 
