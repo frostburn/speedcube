@@ -533,7 +533,11 @@ int main() {
   printf("<th>Case</th>\n");
   printf("<th>Algorithm</th>\n");
   printf("<th>Move count</th>\n");
+  #if MAX_COMPLEXITY
   printf("<th>Move complexity</th>\n");
+  #else
+  printf("<th>Total complexity</th>\n");
+  #endif
   printf("<th>Solver</th>\n");
   printf("</tr>\n");
 

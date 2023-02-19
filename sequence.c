@@ -2,6 +2,8 @@ typedef unsigned __int128 sequence;
 
 #define SEQUENCE_MAX_LENGTH (23)
 
+#define MAX_COMPLEXITY 1
+
 const sequence NOTHING = 0;
 const sequence INVALID = ~NOTHING;
 
@@ -337,8 +339,13 @@ bool is_better(sequence a, sequence b) {
     if (move_a && !move_b) {
       return false;
     }
+    #if MAX_COMPLEXITY
+    score_a = score_a > move_a ? score_a : move_a;
+    score_b = score_b > move_b ? score_b : move_b;
+    #else
     score_a += move_a;
     score_b += move_b;
+    #endif
     a /= NUM_MOVES;
     b /= NUM_MOVES;
   }
@@ -357,7 +364,12 @@ bool is_better(sequence a, sequence b) {
 int sequence_complexity(sequence seq) {
   int result = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
-    result += seq % NUM_MOVES;
+    int m = seq % NUM_MOVES;
+    #if MAX_COMPLEXITY
+    result = result > m ? result : m;
+    #else
+    result += m;
+    #endif
     seq /= NUM_MOVES;
   }
   return result;
