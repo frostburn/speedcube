@@ -165,9 +165,9 @@ void apply_sequence(Cube *cube, sequence seq) {
   }
 }
 
-void print_sequence(sequence seq) {
+void fprint_sequence(FILE *file, sequence seq) {
   if (seq == INVALID) {
-    printf("<DNF>\n");
+    fprintf(file, "<DNF>");
     return;
   }
   sequence reversed = 0;
@@ -179,148 +179,152 @@ void print_sequence(sequence seq) {
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     switch (seq % NUM_MOVES) {
       case U:
-        printf("U ");
+        fprintf(file, "U ");
         break;
       case U_prime:
-        printf("U' ");
+        fprintf(file, "U' ");
         break;
       case U2:
-        printf("U2 ");
+        fprintf(file, "U2 ");
         break;
       case D:
-        printf("D ");
+        fprintf(file, "D ");
         break;
       case D_prime:
-        printf("D' ");
+        fprintf(file, "D' ");
         break;
       case D2:
-        printf("D2 ");
+        fprintf(file, "D2 ");
         break;
       case R:
-        printf("R ");
+        fprintf(file, "R ");
         break;
       case R_prime:
-        printf("R' ");
+        fprintf(file, "R' ");
         break;
       case R2:
-        printf("R2 ");
+        fprintf(file, "R2 ");
         break;
       case L:
-        printf("L ");
+        fprintf(file, "L ");
         break;
       case L_prime:
-        printf("L' ");
+        fprintf(file, "L' ");
         break;
       case L2:
-        printf("L2 ");
+        fprintf(file, "L2 ");
         break;
       case F:
-        printf("F ");
+        fprintf(file, "F ");
         break;
       case F_prime:
-        printf("F' ");
+        fprintf(file, "F' ");
         break;
       case F2:
-        printf("F2 ");
+        fprintf(file, "F2 ");
         break;
       case B:
-        printf("B ");
+        fprintf(file, "B ");
         break;
       case B_prime:
-        printf("B' ");
+        fprintf(file, "B' ");
         break;
       case B2:
-        printf("B2 ");
+        fprintf(file, "B2 ");
         break;
       case u:
-        printf("u ");
+        fprintf(file, "u ");
         break;
       case u_prime:
-        printf("u' ");
+        fprintf(file, "u' ");
         break;
       case u2:
-        printf("u2 ");
+        fprintf(file, "u2 ");
         break;
       case d:
-        printf("d ");
+        fprintf(file, "d ");
         break;
       case d_prime:
-        printf("d' ");
+        fprintf(file, "d' ");
         break;
       case d2:
-        printf("d2 ");
+        fprintf(file, "d2 ");
         break;
       case r:
-        printf("r ");
+        fprintf(file, "r ");
         break;
       case r_prime:
-        printf("r' ");
+        fprintf(file, "r' ");
         break;
       case r2:
-        printf("r2 ");
+        fprintf(file, "r2 ");
         break;
       case l:
-        printf("l ");
+        fprintf(file, "l ");
         break;
       case l_prime:
-        printf("l' ");
+        fprintf(file, "l' ");
         break;
       case l2:
-        printf("l2 ");
+        fprintf(file, "l2 ");
         break;
       case f:
-        printf("f ");
+        fprintf(file, "f ");
         break;
       case f_prime:
-        printf("f' ");
+        fprintf(file, "f' ");
         break;
       case f2:
-        printf("f2 ");
+        fprintf(file, "f2 ");
         break;
       case b:
-        printf("b ");
+        fprintf(file, "b ");
         break;
       case b_prime:
-        printf("b' ");
+        fprintf(file, "b' ");
         break;
       case b2:
-        printf("b2 ");
+        fprintf(file, "b2 ");
         break;
       case M:
-        printf("M ");
+        fprintf(file, "M ");
         break;
       case M_prime:
-        printf("M' ");
+        fprintf(file, "M' ");
         break;
       case M2:
-        printf("M2 ");
+        fprintf(file, "M2 ");
         break;
       case E:
-        printf("E ");
+        fprintf(file, "E ");
         break;
       case E_prime:
-        printf("E' ");
+        fprintf(file, "E' ");
         break;
       case E2:
-        printf("E2 ");
+        fprintf(file, "E2 ");
         break;
       case S:
-        printf("S ");
+        fprintf(file, "S ");
         break;
       case S_prime:
-        printf("S' ");
+        fprintf(file, "S' ");
         break;
       case S2:
-        printf("S2 ");
+        fprintf(file, "S2 ");
         break;
       case I:
         break;
       default:
-        printf("? ");
+        fprintf(file, "? ");
         break;
     }
     seq /= NUM_MOVES;
   }
+}
+
+void print_sequence(sequence seq) {
+  fprint_sequence(stdout, seq);
   printf("\n");
 }
 
