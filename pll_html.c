@@ -229,40 +229,14 @@ int main() {
   size_t search_depth = 4;
 
   LocDirCube root;
+
   /*
   size_t radius = 7;
-  fprintf(stderr, "Generating a PLL goal sphere of radius %zu.\n", radius);
+  fprintf(stderr, "Generating a goal sphere of radius %zu.\n", radius);
+  free_goalsphere(&GLOBAL_SOLVER.goal);
   locdir_reset(&root);
-  GoalSphere sphere = init_goalsphere(&root, radius, &locdir_centerless_hash);
+  GLOBAL_SOLVER.goal = init_goalsphere(&root, radius, &locdir_centerless_hash);
   */
-
-  fprintf(stderr, "Loading database for the last 6 moves.\n");
-  GoalSphere sphere;
-  sphere.hash_func = locdir_centerless_hash;
-  sphere.num_sets = 6 + 1;
-  sphere.sets = malloc(sphere.num_sets * sizeof(size_t*));
-  sphere.set_sizes = malloc(sphere.num_sets * sizeof(size_t));
-  sphere.set_sizes[0] = 1;
-  sphere.set_sizes[1] = 27;
-  sphere.set_sizes[2] = 501;
-  sphere.set_sizes[3] = 9175;
-  sphere.set_sizes[4] = 164900;
-  sphere.set_sizes[5] = 2912447;
-  sphere.set_sizes[6] = 50839041;
-  FILE *fptr = fopen("./tables/centerless_sphere.bin", "rb");
-  if (fptr == NULL) {
-    fprintf(stderr, "Failed to open file.\n");
-    exit(EXIT_FAILURE);
-  }
-  for (size_t i = 0; i < sphere.num_sets; ++i) {
-    sphere.sets[i] = malloc(sphere.set_sizes[i] * sizeof(size_t));
-    size_t num_read = fread(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
-    if (num_read != sphere.set_sizes[i]) {
-      fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, sphere.set_sizes[i]);
-      exit(EXIT_FAILURE);
-    }
-  }
-  fclose(fptr);
 
   char *names[] = {
     "Aa",
@@ -638,11 +612,15 @@ int main() {
       pll_svg(&ldc);
       printf("</td>\n");
       solver = "MitM";
-      solution = goalsphere_solve(&sphere, &ldc, search_depth);
+      for (size_t depth = 0; depth <= search_depth; ++depth) {
+        solution = goalsphere_solve(&GLOBAL_SOLVER.goal, &ldc, depth);
+        if (solution != INVALID) {
+          break;
+        }
+      }
       if (solution == INVALID) {
         solver = "IDA*";
-        ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
-        solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
+        solution = global_solve(&ldc);
       }
       printf("<td>\n");
       print_sequence(solution);
@@ -711,7 +689,6 @@ int main() {
   printf("</body>\n");
   printf("</html>\n");
 
-  free_goalsphere(&sphere);
   free(cases);
   free_global_solver();
 
