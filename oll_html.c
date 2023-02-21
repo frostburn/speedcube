@@ -180,11 +180,8 @@ int main() {
 
   fprintf(stderr, "%zu OLL cases generated\n", num_cases);
 
-  Cube cube;
-  Cube u_variant;
-  Cube u2_variant;
-  Cube u_prime_variant;
-  LocDirCube ldc;
+  Cube cubes[4];
+  LocDirCube ldcs[4];
   sequence setup;
   size_t index;
 
@@ -218,144 +215,107 @@ int main() {
 
   size_t total = 0;
 
+  char *filename = malloc(256 * sizeof(char));
+
   for (size_t i = 0; i < num_algos; ++i) {
     fprintf(stderr, "Solving case %zu\n", i);
     setup = invert(parse(algos[i]));
-    reset_oll(&cube);
-    apply_sequence(&cube, setup);
+    reset_oll(cubes);
+    apply_sequence(cubes, setup);
 
-    printf("<tr>\n");
-    printf("<td>%zu</td>\n", i);
-    printf("<td class=\"case\">\n");
-    oll_svg(&cube);
-    printf("</td>\n");
+    cubes[1] = cubes[0];
+    cubes[2] = cubes[0];
+    cubes[3] = cubes[0];
+    turn_U(cubes + 1);
+    turn_U2(cubes + 2);
+    turn_U_prime(cubes + 3);
 
-    locdir_reset(&ldc);
-    locdir_apply_sequence(&ldc, setup);
+    locdir_reset(ldcs);
+    locdir_apply_sequence(ldcs, setup);
+    ldcs[1] = ldcs[0];
+    ldcs[2] = ldcs[0];
+    ldcs[3] = ldcs[0];
+    locdir_U(ldcs + 1);
+    locdir_U2(ldcs + 2);
+    locdir_U_prime(ldcs + 3);
 
-    sequence solution = goalsphere_solve(&sphere, &ldc, search_depth);
-    printf("<td>\n");
-    print_sequence(solution);
-    printf("</td>\n");
-    printf("<td>%d</td>\n", sequence_length(solution));
-    printf("<td>%d</td>\n", sequence_complexity(solution));
-    printf("</tr>\n");
-
-    index = locdir_oll_index(&ldc);
-    for (size_t j = 0; j < num_cases; ++j) {
-      if (witnesses[j] == index) {
-        for (;j < num_cases - 1; ++j) {
-          witnesses[j] = witnesses[j + 1];
+    for (size_t j = 0; j < 4; ++j) {
+      bool seen = false;
+      for (size_t k = 0; k < j; ++k) {
+        if (equals(cubes + j, cubes + k)) {
+          seen = true;
+          break;
         }
-        num_cases--;
-        break;
       }
-    }
-    // fprintf(stderr, "%zu = %zu @ %d\n", index, i, sequence_length(solution));
+      if (seen) {
+        continue;
+      }
 
-    total++;
-
-    u_variant = cube;
-    turn_U(&u_variant);
-    if (!equals(&cube, &u_variant)) {
-      printf("<tr>\n");
-      printf("<td>%zu U</td>\n", i);
-      printf("<td class=\"case\">\n");
-      oll_svg(&u_variant);
-      printf("</td>\n");
-
-      locdir_reset(&ldc);
-      locdir_apply_sequence(&ldc, setup);
-      locdir_U(&ldc);
-      sequence solution = goalsphere_solve(&sphere, &ldc, search_depth);
-      printf("<td>\n");
-      print_sequence(solution);
-      printf("</td>\n");
-      printf("<td>%d</td>\n", sequence_length(solution));
-      printf("<td>%d</td>\n", sequence_complexity(solution));
-      printf("</tr>\n");
-
-      index = locdir_oll_index(&ldc);
-      for (size_t j = 0; j < num_cases; ++j) {
-        if (witnesses[j] == index) {
-          for (;j < num_cases - 1; ++j) {
-            witnesses[j] = witnesses[j + 1];
+      index = locdir_oll_index(ldcs + j);
+      for (size_t k = 0; k < num_cases; ++k) {
+        if (witnesses[k] == index) {
+          for (;k < num_cases - 1; ++k) {
+            witnesses[k] = witnesses[k + 1];
           }
           num_cases--;
           break;
         }
       }
-      // fprintf(stderr, "%zu = %zu U @ %d\n", index, i, sequence_length(solution));
-      total++;
-    }
-    u2_variant = cube;
-    turn_U2(&u2_variant);
-    if (!equals(&cube, &u2_variant) && !equals(&u_variant, &u2_variant)) {
-      printf("<tr>\n");
-      printf("<td>%zu U2</td>\n", i);
-      printf("<td class=\"case\">\n");
-      oll_svg(&u2_variant);
-      printf("</td>\n");
+      // fprintf(stderr, "%zu = %zu @ %d\n", index, i, sequence_length(solution));
 
-      locdir_reset(&ldc);
-      locdir_apply_sequence(&ldc, setup);
-      locdir_U2(&ldc);
-      sequence solution = goalsphere_solve(&sphere, &ldc, search_depth);
+      sequence* solutions = goalsphere_solve_all(&sphere, ldcs + j, search_depth);
+      if (solutions == NULL) {
+        fprintf(stderr, "Failed to solve.\n");
+        continue;
+      }
+      sequence solution = INVALID;
+      sequence* candidate = solutions;
+      while (*candidate != SENTINEL) {
+        solution = is_better(solution, *candidate) ? solution : *candidate;
+        candidate++;
+      }
+
+      printf("<tr>\n");
+      if (j == 0) {
+        printf("<td>%zu</td>\n", i);
+      } else if (j == 1) {
+        printf("<td>%zu U</td>\n", i);
+      } else if (j == 2) {
+        printf("<td>%zu U2</td>\n", i);
+      } else {
+        printf("<td>%zu U'</td>\n", i);
+      }
+      printf("<td class=\"case\">\n");
+      oll_svg(cubes + j);
+      printf("</td>\n");
       printf("<td>\n");
+      printf("<a href=\"txt/oll_%zu_%zu.txt\">\n", i, j);
       print_sequence(solution);
+      printf("</a>\n");
       printf("</td>\n");
       printf("<td>%d</td>\n", sequence_length(solution));
       printf("<td>%d</td>\n", sequence_complexity(solution));
       printf("</tr>\n");
 
-      index = locdir_oll_index(&ldc);
-      for (size_t j = 0; j < num_cases; ++j) {
-        if (witnesses[j] == index) {
-          for (;j < num_cases - 1; ++j) {
-            witnesses[j] = witnesses[j + 1];
-          }
-          num_cases--;
-          break;
-        }
+      sprintf(filename, "txt/oll_%zu_%zu.txt", i, j);
+      FILE *fptr = fopen(filename, "w");
+      candidate = solutions;
+      while (*candidate != SENTINEL) {
+        fprint_sequence(fptr, *candidate);
+        fprintf(fptr, "\n");
+        candidate++;
       }
-      // fprintf(stderr, "%zu = %zu U2 @ %d\n", index, i, sequence_length(solution));
-      total++;
-    }
-    u_prime_variant = cube;
-    turn_U_prime(&u_prime_variant);
-    if (!equals(&cube, &u_prime_variant) && !equals(&u_variant, &u_prime_variant) && !equals(&u_prime_variant, &u2_variant)) {
-      printf("<tr>\n");
-      printf("<td>%zu U'</td>\n", i);
-      printf("<td class=\"case\">\n");
-      oll_svg(&u_prime_variant);
-      printf("</td>\n");
+      fclose(fptr);
 
-      locdir_reset(&ldc);
-      locdir_apply_sequence(&ldc, setup);
-      locdir_U_prime(&ldc);
-      sequence solution = goalsphere_solve(&sphere, &ldc, search_depth);
-      printf("<td>\n");
-      print_sequence(solution);
-      printf("</td>\n");
-      printf("<td>%d</td>\n", sequence_length(solution));
-      printf("<td>%d</td>\n", sequence_complexity(solution));
-      printf("</tr>\n");
+      free(solutions);
 
-      index = locdir_oll_index(&ldc);
-      for (size_t j = 0; j < num_cases; ++j) {
-        if (witnesses[j] == index) {
-          for (;j < num_cases - 1; ++j) {
-            witnesses[j] = witnesses[j + 1];
-          }
-          num_cases--;
-          break;
-        }
-      }
-      // fprintf(stderr, "%zu = %zu U' @ %d\n", index, i, sequence_length(solution));
       total++;
     }
   }
 
+  if (num_cases != 0) {
+    fprintf(stderr, "%zu cases remain!\n", num_cases);
+  }
   assert(num_cases == 0);
 
   printf("</table>\n");
@@ -366,6 +326,7 @@ int main() {
   printf("</html>\n");
 
   free_goalsphere(&sphere);
+  free(filename);
 
   return EXIT_SUCCESS;
 }
