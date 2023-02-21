@@ -217,9 +217,8 @@ void pll_solutions() {
 }
 
 void oll_solutions() {
-  FILE *fptr;
-
   /*
+  FILE *fptr;
   printf("Loading database for the last 6 OLL moves.\n");
   GoalSphere sphere;
   sphere.hash_func = locdir_oll_index;
@@ -311,18 +310,24 @@ void oll_solutions() {
   unsigned char search_depth = 4;
   size_t num_solvable = 0;
   for (size_t i = 0; i < num_cases; ++i) {
-    sequence solution = goalsphere_solve(&sphere, cases + i, search_depth);
-    if (solution == INVALID) {
+    sequence* solutions = goalsphere_solve_all(&sphere, cases + i, search_depth);
+    if (solutions == NULL) {
       printf("Not solvable in %zu moves or less.\n", sphere.num_sets - 1 + search_depth);
     } else {
       num_solvable++;
-      int depth = sequence_length(solution);
-      if (depth == 1) {
-        printf("Solvable in 1 move!\n");
-      } else {
-        printf("Solvable in %d moves!\n", depth);
+      size_t j = 0;
+      for (;;) {
+        sequence solution = solutions[j];
+        if (solution == SENTINEL) {
+          break;
+        }
+        if (j < 4) {
+          print_sequence(solutions[j]);
+        }
+        j++;
       }
-      print_sequence(solution);
+      printf("\n%zu solutions of length %d\n", j, sequence_length(solutions[0]));
+      free(solutions);
     }
     rotate_x_prime(replicas + i);
     render(replicas + i);
@@ -342,11 +347,11 @@ int main() {
 
   // solve_2x2x2();
 
-  solve_3x3x3();
+  // solve_3x3x3();
 
   // pll_solutions();
 
-  // oll_solutions();
+  oll_solutions();
 
   return EXIT_SUCCESS;
 }

@@ -206,6 +206,132 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
   return solve(search_depth);
 }
 
+const sequence SENTINEL = INVALID - 1;
+
+sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
+  if (sphere->num_sets < 1) {
+    return NULL;
+  }
+  if (sphere->sets[0][0] == sphere->hash_func(ldc)) {
+    sequence *result = malloc(2 * sizeof(sequence));
+    result[0] = I;
+    result[1] = SENTINEL;
+    return result;
+  }
+  LocDirCube path[SEQUENCE_MAX_LENGTH];
+  path[0] = *ldc;
+  size_t path_length = 1;
+
+  sequence* solve(unsigned char search_depth_) {
+    unsigned char best_depth = UNKNOWN;
+    LocDirCube children[NUM_MOVES - 1];
+    LocDirCube aligned;
+    bool best[NUM_MOVES - 1];
+    size_t i = 0;
+    for (enum move m = U; m <= MAX_MOVE; ++m) {
+      children[i] = path[path_length - 1];
+      locdir_apply(children + i, m);
+      bool in_path = false;
+      for (size_t j = 0; j < path_length; ++j) {
+        if (locdir_equals(children + i, path + j)) {
+          in_path = true;
+          break;
+        }
+      }
+      if (in_path) {
+        best[i] = false;
+        i++;
+        continue;
+      }
+      aligned = children[i];
+      locdir_realign(&aligned);
+      unsigned char depth = goalsphere_depth(sphere, &aligned, search_depth_);
+      if (depth < best_depth) {
+        best_depth = depth;
+        for (int idx = 0; idx < i; ++idx) {
+          best[idx] = false;
+        }
+      }
+      best[i] = (depth <= best_depth);
+      i++;
+    }
+
+    if (best_depth == 0) {
+      size_t num_solutions = 0;
+      for (i = 0; i < NUM_MOVES - 1; ++i) {
+        if (best[i]) {
+          num_solutions++;
+        }
+      }
+      sequence *result = malloc((num_solutions + 1) * sizeof(sequence));
+      num_solutions = 0;
+      i = 0;
+      for (enum move m = U; m <= MAX_MOVE; ++m) {
+        if (best[i]) {
+          result[num_solutions++] = m;
+        }
+        i++;
+      }
+      result[num_solutions] = SENTINEL;
+      return result;
+    }
+
+    if (best_depth == UNKNOWN) {
+      return NULL;
+    }
+
+    if (search_depth_ > 0) {
+      search_depth_--;
+    }
+    size_t num_best = 0;
+    for (i = 0; i < NUM_MOVES - 1; ++i) {
+      if (best[i]) {
+        num_best++;
+      }
+    }
+    sequence **child_results = malloc(num_best * sizeof(sequence*));
+    num_best = 0;
+    size_t num_solutions = 0;
+    i = 0;
+    for (enum move m = U; m <= MAX_MOVE; ++m) {
+      if (best[i]) {
+        path[path_length++] = children[i];
+        child_results[num_best] = solve(search_depth_);
+        size_t j = 0;
+        for (;;) {
+          sequence solution = child_results[num_best][j];
+          if (solution == SENTINEL) {
+            break;
+          }
+          child_results[num_best][j++] = concat(m, solution);
+          num_solutions++;
+        }
+        num_best++;
+        path_length--;
+      }
+      i++;
+    }
+    sequence *result = malloc((num_solutions + 1) * sizeof(sequence));
+    num_solutions = 0;
+    for (i = 0; i < num_best; ++i) {
+      size_t j = 0;
+      for (;;) {
+        sequence solution = child_results[i][j];
+        if (solution == SENTINEL) {
+          break;
+        }
+        result[num_solutions++] = child_results[i][j++];
+      }
+      free(child_results[i]);
+    }
+    result[num_solutions] = SENTINEL;
+    return result;
+  }
+
+  return solve(search_depth);
+}
+
+
 void update_goalsphere(GoalSphere *sphere, LocDirCube *ldc, size_t depth, size_t max_depth, bool *boundary) {
   size_t hash = (*sphere->hash_func)(ldc);
   if (depth == max_depth - 1) {
