@@ -226,17 +226,14 @@ void pll_svg(LocDirCube *ldc) {
 int main() {
   prepare_global_solver();
 
-  size_t search_depth = 4;
-
   LocDirCube root;
 
-  /*
+  size_t search_depth = 5;
   size_t radius = 7;
   fprintf(stderr, "Generating a goal sphere of radius %zu.\n", radius);
   free_goalsphere(&GLOBAL_SOLVER.goal);
   locdir_reset(&root);
   GLOBAL_SOLVER.goal = init_goalsphere(&root, radius, &locdir_centerless_hash);
-  */
 
   char *names[] = {
     "Aa",
@@ -517,6 +514,8 @@ int main() {
 
   size_t total = 0;
 
+  char *filename = malloc(256 * sizeof(char));
+
   for (size_t i = 0; i < num_algos; ++i) {
     fprintf(stderr, "Solving case %s\n", names[i]);
     setup = invert(parse(algos[i]));
@@ -612,23 +611,62 @@ int main() {
       pll_svg(&ldc);
       printf("</td>\n");
       solver = "MitM";
-      for (size_t depth = 0; depth <= search_depth; ++depth) {
-        solution = goalsphere_solve(&GLOBAL_SOLVER.goal, &ldc, depth);
-        if (solution != INVALID) {
+      size_t depth = 0;
+      for (; depth < search_depth; ++depth) {
+        if (goalsphere_depth(&GLOBAL_SOLVER.goal, &ldc, depth) != UNKNOWN) {
           break;
         }
       }
-      if (solution == INVALID) {
+      fprintf(stderr, "Depth = %zu + %zu\n", depth, GLOBAL_SOLVER.goal.num_sets - 1);
+      sequence *solutions = NULL;
+      solution = INVALID;
+      solutions = goalsphere_solve_all(&GLOBAL_SOLVER.goal, &ldc, depth);
+      fprintf(stderr, "Solutions @ %p\n", solutions);
+      if (solutions == NULL) {
         solver = "IDA*";
+        solutions = NULL;
         solution = global_solve(&ldc);
+        fprint_sequence(stderr, solution);
+        fprintf(stderr, "\nIDA*\n");
+      } else {
+        solution = INVALID;
+        sequence* candidate = solutions;
+        size_t num_solutions = 0;
+        while (*candidate != SENTINEL) {
+          solution = is_better(solution, *candidate) ? solution : *candidate;
+          candidate++;
+          num_solutions++;
+        }
+        fprint_sequence(stderr, solution);
+        fprintf(stderr, "\n%zu solutions found.\n", num_solutions);
       }
       printf("<td>\n");
+      if (solutions != NULL) {
+        printf("<a href=\"txt/pll_%zu_%zu.txt\">\n", i, k);
+      }
       print_sequence(solution);
+      if (solutions != NULL) {
+        printf("</a>\n");
+      }
       printf("</td>\n");
       printf("<td>%d</td>\n", sequence_length(solution));
       printf("<td>%d</td>\n", sequence_complexity(solution));
       printf("<td>%s</td>\n", solver);
       printf("</tr>\n");
+
+      if (solutions != NULL) {
+        sprintf(filename, "txt/pll_%zu_%zu.txt", i, k);
+        FILE *fptr = fopen(filename, "w");
+        sequence *candidate = solutions;
+        while (*candidate != SENTINEL) {
+          fprint_sequence(fptr, *candidate);
+          fprintf(fptr, "\n");
+          candidate++;
+        }
+        fclose(fptr);
+
+        free(solutions);
+      }
 
       total++;
       locdir_U(&ldc);
@@ -690,6 +728,7 @@ int main() {
   printf("</html>\n");
 
   free(cases);
+  free(filename);
   free_global_solver();
 
   return EXIT_SUCCESS;

@@ -297,6 +297,13 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
       if (best[i]) {
         path[path_length++] = children[i];
         child_results[num_best] = solve(search_depth_);
+        if (child_results[num_best] == NULL) {
+          // This shouldn't happen. (best_depth == UNKNOWN) should have triggered above.
+          for (size_t j = 0; j < num_best; ++j) {
+            free(child_results[j]);
+          }
+          return NULL;
+        }
         size_t j = 0;
         for (;;) {
           sequence solution = child_results[num_best][j];
