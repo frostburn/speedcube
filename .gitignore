@@ -56,3 +56,6 @@ dkms.conf
 
 # HTML dumps
 *.html
+
+# HTML auxillaries
+*.txt
