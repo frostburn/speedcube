@@ -761,6 +761,8 @@ void compensate(Cube *cube, enum move move) {
     case S2:
       rotate_z2(cube);
       break;
+    default:
+      break;
   }
 }
 
