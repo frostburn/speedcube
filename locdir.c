@@ -52,6 +52,20 @@ void locdir_reset_edges(LocDirCube *ldc) {
   }
 }
 
+void locdir_reset_cross(LocDirCube *ldc) {
+  for (int i = 0; i < 8; ++i) {
+    ldc->corner_locs[i] = -1;
+    ldc->corner_dirs[i] = 0;
+  }
+  for (int i = 0; i < 12; ++i) {
+    ldc->edge_locs[i] = i < 8 ? -1 : i;
+    ldc->edge_dirs[i] = true;
+  }
+  for (int i = 0; i < 6; ++i) {
+    ldc->center_locs[i] = -1;
+  }
+}
+
 bool locdir_equals(LocDirCube *a, LocDirCube *b) {
   for (int i = 0; i < 8; ++i) {
     if (a->corner_locs[i] != b->corner_locs[i]) {
@@ -308,6 +322,23 @@ size_t locdir_oll_index(LocDirCube *ldc) {
 }
 
 const size_t LOCDIR_OLL_INDEX_SPACE = (8ULL*7*6*5 * 3*3*3*3) * (12ULL*11*10*9*8*7*6*5 * 2*2*2*2*2*2*2*2) * (3*3*3*(1)) * (2*2*2*(1));
+
+size_t locdir_cross_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->edge_locs[8 + i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[8 + j] < ldc->edge_locs[8 + i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[8 + i] + 2 * result;
+  }
+  return result;
+}
+
+const size_t LOCDIR_CROSS_INDEX_SPACE = 12*11*10*9 * 2*2*2*2;
 
 size_t locdir_centerless_hash(LocDirCube *ldc) {
   return locdir_corner_index(ldc) ^ (18804110 * locdir_edge_index(ldc));
@@ -1317,6 +1348,11 @@ void locdir_realign(LocDirCube *ldc) {
     case 4:
       locdir_x2(ldc);
       break;
+    case 5:
+      break;
+    default:
+      fprintf(stderr, "Unrecognized center cubie\n");
+      exit(EXIT_FAILURE);
   }
   // Move green to the front
   switch (ldc->center_locs[1]) {
@@ -1329,6 +1365,13 @@ void locdir_realign(LocDirCube *ldc) {
     case 3:
       locdir_y2(ldc);
       break;
+    case 1:
+    case 4:
+    case 5:
+      break;
+    default:
+      fprintf(stderr, "Unrecognized center cubie\n");
+      exit(EXIT_FAILURE);
   }
 }
 

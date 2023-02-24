@@ -17,8 +17,6 @@ int cmp_size_t(const void *a, const void *b) {
   return 0;
 }
 
-const unsigned char UNKNOWN = 255;
-
 bool set_has(size_t *set, size_t size, size_t hash) {
   size_t halfway;
   size_t halfway_value;

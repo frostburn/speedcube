@@ -525,3 +525,55 @@ sequence parse(char *string) {
   }
   return concat(parse_move(string[0]), parse(string + 1));
 }
+
+#define NUM_FACE_TURNS (18)
+
+enum move FACE_TURNS[] = {
+  U, U_prime, U2,
+  D, D_prime, D2,
+  R, R_prime, R2,
+  L, L_prime, L2,
+  F, F_prime, F2,
+  B, B_prime, B2,
+};
+
+sequence make_scramble(Cube *root, int length) {
+  if (length > SEQUENCE_MAX_LENGTH) {
+    fprintf(stderr, "Desired sramble length too long");
+    exit(EXIT_FAILURE);
+  }
+
+  Cube path[SEQUENCE_MAX_LENGTH + 1];
+  path[0] = *root;
+
+  sequence result = I;
+  int index = 1;
+  int face_bucket_2 = -1;
+  int face_bucket = -1;
+  while (index <= length) {
+    int turn_index = rand() % NUM_FACE_TURNS;
+    int commuting_index = turn_index / 6;
+    if (turn_index / 3 == face_bucket || (face_bucket / 2 == commuting_index && face_bucket_2 == turn_index / 3)) {
+      continue;
+    }
+    face_bucket_2 = face_bucket;
+    face_bucket = turn_index / 3;
+    enum move m = FACE_TURNS[turn_index];
+
+    path[index] = path[index - 1];
+    apply(path + index, m);
+    bool in_path = false;
+    for (int i = 0; i < index; ++i) {
+      if (equals(path + i, path + index)) {
+        in_path = true;
+        break;
+      }
+    }
+    if (in_path) {
+      continue;
+    }
+    result = m + result * NUM_MOVES;
+    index++;
+  }
+  return result;
+}

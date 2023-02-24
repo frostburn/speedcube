@@ -1,3 +1,5 @@
+const unsigned char UNKNOWN = 255;
+
 typedef struct {
   unsigned char *octets;
   unsigned char *visits;
@@ -91,56 +93,66 @@ void populate_nibblebase(Nibblebase *tablebase, LocDirCube *ldc) {
   }
 }
 
-sequence nibble_solve_(Nibblebase *tablebase, LocDirCube *ldc) {
-  if (visit(tablebase, (*tablebase->index_func)(ldc))) {
-    return INVALID;
-  }
-
-  unsigned char best_depth = SEQUENCE_MAX_LENGTH;
-  LocDirCube children[NUM_STABLE_MOVES];
-  bool best[NUM_STABLE_MOVES];
-  for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
-    children[i] = *ldc;
-    locdir_apply_stable(children + i, STABLE_MOVES[i]);
-    size_t index = (*tablebase->index_func)(children + i);
-    unsigned char depth = get_nibble(tablebase, index);
-    if (depth < best_depth) {
-      best_depth = depth;
-      for (int idx = 0; idx < i; ++idx) {
-        best[idx] = false;
-      }
-    }
-    best[i] = (depth <= best_depth);
-  }
-
-  if (best_depth == 0) {
-    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
-      if (best[i]) {
-        return STABLE_MOVES[i];
-      }
-    }
-  }
-
-  sequence solution = INVALID;
-  for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
-    if (best[i]) {
-      sequence candidate = concat(STABLE_MOVES[i], nibble_solve_(tablebase, children + i));
-      if (is_better(candidate, solution)) {
-        solution = candidate;
-      }
-    }
-  }
-  return solution;
+unsigned char nibble_depth(Nibblebase *tablebase, LocDirCube *ldc) {
+  return get_nibble(tablebase, (*tablebase->index_func)(ldc));
 }
 
 sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc) {
-  size_t index = (*tablebase->index_func)(ldc);
-  unsigned char depth = get_nibble(tablebase, index);
+  unsigned char depth = nibble_depth(tablebase, ldc);
   if (depth == 0) {
     return I;
   }
-  for (size_t i = 0; i < tablebase->num_visits; ++i) {
-    tablebase->visits[i] = 0;
+
+  sequence solve(LocDirCube *parent) {
+    unsigned char best_depth = UNKNOWN;
+    LocDirCube children[NUM_MOVES - 1];
+    LocDirCube aligned;
+    bool best[NUM_MOVES - 1];
+    size_t i = 0;
+    for (enum move m = U; m <= MAX_MOVE; ++m) {
+      children[i] = *parent;
+      locdir_apply(children + i, m);
+      aligned = children[i];
+      locdir_realign(&aligned);
+      size_t index = (*tablebase->index_func)(&aligned);
+      unsigned char depth = get_nibble(tablebase, index);
+      if (depth < best_depth) {
+        best_depth = depth;
+        for (int idx = 0; idx < i; ++idx) {
+          best[idx] = false;
+        }
+      }
+      best[i] = (depth <= best_depth);
+      i++;
+    }
+
+    if (best_depth == 0) {
+      i = 0;
+      for (enum move m = U; m <= MAX_MOVE; ++m) {
+        if (best[i]) {
+          return m;
+        }
+        i++;
+      }
+    }
+
+    if (best_depth == UNKNOWN) {
+      return INVALID;
+    }
+
+    sequence solution = INVALID;
+    i = 0;
+    for (enum move m = U; m <= MAX_MOVE; ++m) {
+      if (best[i]) {
+        sequence candidate = concat(m, solve(children + i));
+        if (is_better(candidate, solution)) {
+          solution = candidate;
+        }
+      }
+      i++;
+    }
+    return solution;
   }
-  return nibble_solve_(tablebase, ldc);
+
+  return solve(ldc);
 }

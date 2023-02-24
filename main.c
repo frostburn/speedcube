@@ -351,7 +351,34 @@ int main() {
 
   // pll_solutions();
 
-  oll_solutions();
+  // oll_solutions();
+
+  Nibblebase tablebase = init_nibblebase(LOCDIR_CROSS_INDEX_SPACE, &locdir_cross_index);
+  LocDirCube ldc;
+  locdir_reset_cross(&ldc);
+  populate_nibblebase(&tablebase, &ldc);
+
+  Cube cube;
+
+  for (;;) {
+    locdir_reset_cross(&ldc);
+    cube = to_cube(&ldc);
+    sequence s = make_scramble(&cube, 8 + rand() % 4);
+    locdir_apply_sequence(&ldc, s);
+    unsigned char depth = nibble_depth(&tablebase, &ldc);
+
+    printf("Solve in %d moves\n", depth);
+    print_sequence(s);
+    Cube cube = to_cube(&ldc);
+    render(&cube);
+
+    while (getchar() != '\n');
+    locdir_reset(&ldc);
+    locdir_apply_sequence(&ldc, s);
+    sequence solution = nibble_solve(&tablebase, &ldc);
+    print_sequence(solution);
+    printf("\n");
+  }
 
   return EXIT_SUCCESS;
 }
