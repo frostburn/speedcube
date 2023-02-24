@@ -8,6 +8,7 @@
 #include "moves.c"
 #include "sequence.c"
 #include "locdir.c"
+#include "tablebase.c"
 #include "goalsphere.c"
 
 typedef struct
