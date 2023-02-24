@@ -32,6 +32,9 @@ sequence reverse(sequence seq) {
 }
 
 sequence concat(sequence a, sequence b) {
+  if (a == INVALID || b == INVALID) {
+    return INVALID;
+  }
   sequence reversed = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     reversed = reversed * NUM_MOVES + b % NUM_MOVES;
@@ -329,6 +332,12 @@ void print_sequence(sequence seq) {
 }
 
 bool is_better(sequence a, sequence b) {
+  if (a == INVALID) {
+    return false;
+  }
+  if (b == INVALID) {
+    return true;
+  }
   bool lexicographic = (a < b);
   int score_a = 0;
   int score_b = 0;
