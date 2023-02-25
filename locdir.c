@@ -66,6 +66,12 @@ void locdir_reset_cross(LocDirCube *ldc) {
   }
 }
 
+void locdir_reset_xcross(LocDirCube *ldc) {
+  locdir_reset_cross(ldc);
+  ldc->edge_locs[4] = 4;
+  ldc->corner_locs[4] = 4;
+}
+
 bool locdir_equals(LocDirCube *a, LocDirCube *b) {
   for (int i = 0; i < 8; ++i) {
     if (a->corner_locs[i] != b->corner_locs[i]) {
@@ -339,6 +345,26 @@ size_t locdir_cross_index(LocDirCube *ldc) {
 }
 
 const size_t LOCDIR_CROSS_INDEX_SPACE = 12*11*10*9 * 2*2*2*2;
+
+size_t locdir_xcross_index(LocDirCube *ldc) {
+  size_t result = locdir_cross_index(ldc);
+
+  char loc = ldc->edge_locs[4];
+  for (int j = 3; j >= 0; --j) {
+    if (ldc->edge_locs[8 + j] < ldc->edge_locs[4]) {
+      loc--;
+    }
+  }
+  result = loc + result * 8;
+  result = ldc->edge_dirs[4] + 2 * result;
+
+  result = ldc->corner_locs[4] + result * 8;
+  result = ldc->corner_dirs[4] + 3 * result;
+
+  return result;
+}
+
+const size_t LOCDIR_XCROSS_INDEX_SPACE = LOCDIR_CROSS_INDEX_SPACE * 8*2 * 8*3;
 
 size_t locdir_centerless_hash(LocDirCube *ldc) {
   return locdir_corner_index(ldc) ^ (18804110 * locdir_edge_index(ldc));

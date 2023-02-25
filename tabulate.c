@@ -94,6 +94,32 @@ void create_last_edges_tablebase() {
   free_nibblebase(&tablebase);
 }
 
+void create_xcross_tablebase() {
+  Cube cube;
+  LocDirCube ldc;
+  FILE *fptr;
+  size_t tablebase_size;
+  Nibblebase tablebase;
+
+  printf("Creating tablebase for xcross...\n");
+  tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
+  printf("Populating xcross tablebase...\n");
+  locdir_reset_xcross(&ldc);
+  cube = to_cube(&ldc);
+  render(&cube);
+  populate_nibblebase(&tablebase, &ldc);
+  printf("Storing result...\n");
+  fptr = fopen("./tables/xcross.bin", "wb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open storage.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_XCROSS_INDEX_SPACE + 1)/2;
+  fwrite(tablebase.octets, sizeof(unsigned char), tablebase_size, fptr);
+  fclose(fptr);
+  free_nibblebase(&tablebase);
+}
+
 void create_edge_sphere() {
   Cube cube;
   LocDirCube ldc;
@@ -207,6 +233,8 @@ int main() {
   create_3x3x3_sphere();
 
   // create_oll_sphere();
+
+  create_xcross_tablebase();
 
   return EXIT_SUCCESS;
 }

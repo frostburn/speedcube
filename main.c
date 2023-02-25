@@ -371,6 +371,51 @@ void cross_trainer() {
   }
 }
 
+
+void xcross_trainer() {
+  FILE *fptr;
+  size_t num_read;
+  size_t tablebase_size;
+
+  fprintf(stderr, "Loading tablebase for xcross.\n");
+  Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
+  fptr = fopen("./tables/xcross.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_XCROSS_INDEX_SPACE + 1)/2;
+  num_read = fread(tablebase.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
+
+  LocDirCube ldc;
+  Cube cube;
+
+  for (;;) {
+    locdir_reset_xcross(&ldc);
+    cube = to_cube(&ldc);
+    sequence s = make_scramble(&cube, 9 + rand() % 5);
+    locdir_apply_sequence(&ldc, s);
+    unsigned char depth = nibble_depth(&tablebase, &ldc);
+
+    printf("Solve in %d moves\n", depth);
+    print_sequence(s);
+    Cube cube = to_cube(&ldc);
+    render(&cube);
+
+    while (getchar() != '\n');
+    locdir_reset(&ldc);
+    locdir_apply_sequence(&ldc, s);
+    sequence solution = nibble_solve(&tablebase, &ldc);
+    print_sequence(solution);
+    printf("\n");
+  }
+}
+
 void cross_stats() {
   Nibblebase tablebase = init_nibblebase(LOCDIR_CROSS_INDEX_SPACE, &locdir_cross_index);
   LocDirCube ldc;
@@ -517,7 +562,9 @@ int main() {
 
   // cross_trainer();
 
-  cross_stats();
+  xcross_trainer();
+
+  // cross_stats();
 
   return EXIT_SUCCESS;
 }
