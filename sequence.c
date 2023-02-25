@@ -548,16 +548,19 @@ sequence make_scramble(Cube *root, int length) {
 
   sequence result = I;
   int index = 1;
-  int face_bucket_2 = -1;
-  int face_bucket = -1;
+  int prev_prev_face_bucket = -1;
+  int prev_face_bucket = -1;
   while (index <= length) {
     int turn_index = rand() % NUM_FACE_TURNS;
-    int commuting_index = turn_index / 6;
-    if (turn_index / 3 == face_bucket || (face_bucket / 2 == commuting_index && face_bucket_2 == turn_index / 3)) {
+    int face_bucket = turn_index / 3;
+    int commuting_bucket = face_bucket / 2;
+    int prev_commuting_bucket = prev_face_bucket / 2;
+    if (face_bucket == prev_face_bucket || (commuting_bucket == prev_commuting_bucket && prev_prev_face_bucket == face_bucket)) {
       continue;
     }
-    face_bucket_2 = face_bucket;
-    face_bucket = turn_index / 3;
+    prev_prev_face_bucket = prev_face_bucket;
+    prev_face_bucket = face_bucket;
+
     enum move m = FACE_TURNS[turn_index];
 
     path[index] = path[index - 1];
