@@ -1,5 +1,7 @@
 // Locations and directions/orientations of cubies
 
+#define ALTERNATIVE_HASH 1
+
 typedef struct {
   char corner_locs[8];
   char corner_dirs[8];
@@ -367,7 +369,11 @@ size_t locdir_xcross_index(LocDirCube *ldc) {
 const size_t LOCDIR_XCROSS_INDEX_SPACE = LOCDIR_CROSS_INDEX_SPACE * 8*2 * 8*3;
 
 size_t locdir_centerless_hash(LocDirCube *ldc) {
+  #if ALTERNATIVE_HASH
+  return locdir_edge_index(ldc) ^ (209194574107ULL * locdir_corner_index(ldc));
+  #else
   return locdir_corner_index(ldc) ^ (18804110 * locdir_edge_index(ldc));
+  #endif
 }
 
 bitboard corner_to_bitboard(char loc, char dir) {

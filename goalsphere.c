@@ -295,13 +295,15 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
       if (best[i]) {
         path[path_length++] = children[i];
         child_results[num_best] = solve(search_depth_);
+
+        // This shouldn't happen. (best_depth == UNKNOWN) should have triggered above,
+        // but maybe this is related to hash collisions.
         if (child_results[num_best] == NULL) {
-          // This shouldn't happen. (best_depth == UNKNOWN) should have triggered above.
-          for (size_t j = 0; j < num_best; ++j) {
-            free(child_results[j]);
-          }
-          return NULL;
+          num_best++;
+          path_length--;
+          continue;
         }
+
         size_t j = 0;
         for (;;) {
           sequence solution = child_results[num_best][j];
@@ -319,6 +321,9 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
     sequence *result = malloc((num_solutions + 1) * sizeof(sequence));
     num_solutions = 0;
     for (i = 0; i < num_best; ++i) {
+      if (child_results[i] == NULL) {
+        continue;
+      }
       size_t j = 0;
       for (;;) {
         sequence solution = child_results[i][j];
