@@ -1400,3 +1400,46 @@ void locdir_scramble(LocDirCube *ldc) {
     }
   }
 }
+
+/*
+// TODO: Figure out how the directions should behave.
+void locdir_color_y(LocDirCube *ldc) {
+  char temp;
+
+  temp = ldc->center_locs[0];
+  ldc->center_locs[0] = ldc->center_locs[1];
+  ldc->center_locs[1] = ldc->center_locs[2];
+  ldc->center_locs[2] = ldc->center_locs[3];
+  ldc->center_locs[3] = temp;
+
+  temp = ldc->corner_locs[0];
+  ldc->corner_locs[0] = ldc->corner_locs[1];
+  ldc->corner_locs[1] = ldc->corner_locs[2];
+  ldc->corner_locs[2] = ldc->corner_locs[3];
+  ldc->corner_locs[3] = temp;
+
+  temp = ldc->corner_locs[4];
+  ldc->corner_locs[4] = ldc->corner_locs[5];
+  ldc->corner_locs[5] = ldc->corner_locs[6];
+  ldc->corner_locs[6] = ldc->corner_locs[7];
+  ldc->corner_locs[7] = temp;
+
+  temp = ldc->edge_locs[0];
+  ldc->edge_locs[0] = ldc->edge_locs[1];
+  ldc->edge_locs[1] = ldc->edge_locs[2];
+  ldc->edge_locs[2] = ldc->edge_locs[3];
+  ldc->edge_locs[3] = temp;
+
+  temp = ldc->edge_locs[4];
+  ldc->edge_locs[4] = ldc->edge_locs[5];
+  ldc->edge_locs[5] = ldc->edge_locs[6];
+  ldc->edge_locs[6] = ldc->edge_locs[7];
+  ldc->edge_locs[7] = temp;
+
+  temp = ldc->edge_locs[8];
+  ldc->edge_locs[8] = ldc->edge_locs[9];
+  ldc->edge_locs[9] = ldc->edge_locs[10];
+  ldc->edge_locs[10] = ldc->edge_locs[11];
+  ldc->edge_locs[11] = temp;
+}
+*/

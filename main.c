@@ -342,17 +342,7 @@ void oll_solutions() {
   free_goalsphere(&sphere);
 }
 
-int main() {
-  srand(time(NULL));
-
-  // solve_2x2x2();
-
-  // solve_3x3x3();
-
-  // pll_solutions();
-
-  // oll_solutions();
-
+void cross_trainer() {
   Nibblebase tablebase = init_nibblebase(LOCDIR_CROSS_INDEX_SPACE, &locdir_cross_index);
   LocDirCube ldc;
   locdir_reset_cross(&ldc);
@@ -379,6 +369,155 @@ int main() {
     print_sequence(solution);
     printf("\n");
   }
+}
+
+void cross_stats() {
+  Nibblebase tablebase = init_nibblebase(LOCDIR_CROSS_INDEX_SPACE, &locdir_cross_index);
+  LocDirCube ldc;
+  locdir_reset_cross(&ldc);
+  populate_nibblebase(&tablebase, &ldc);
+
+  size_t depths[9] = {0};
+
+  size_t N = 10000;
+
+  printf("=== Single ===\n");
+  for (size_t i = 0; i < N; ++i) {
+    locdir_reset(&ldc);
+    locdir_scramble(&ldc);
+
+    unsigned char depth = nibble_depth(&tablebase, &ldc);
+    depths[depth]++;
+  }
+
+  double average = 0;
+  for (size_t i = 0; i < 9; ++i) {
+    printf("%zu: ", i);
+    double portion = ((double)depths[i]) / N;
+    for (size_t j = 0; j < portion * 100; ++j) {
+      printf("#");
+    }
+    printf(" %g%%\n", portion * 100);
+    average += i * portion;
+    depths[i] = 0;
+  }
+  printf("Average = %g\n", average);
+
+  printf("\n=== Double ===\n");
+
+  for (size_t i = 0; i < N; ++i) {
+    int seed = rand();
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_scramble(&ldc);
+    unsigned char white_depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_z(&ldc);
+    unsigned char orange_depth = nibble_depth(&tablebase, &ldc);
+
+    unsigned char depth = orange_depth < white_depth ? orange_depth : white_depth;
+
+    depths[depth]++;
+  }
+
+  average = 0;
+  for (size_t i = 0; i < 9; ++i) {
+    printf("%zu: ", i);
+    double portion = ((double)depths[i]) / N;
+    for (size_t j = 0; j < portion * 100; ++j) {
+      printf("#");
+    }
+    printf(" %g%%\n", portion * 100);
+    average += i * portion;
+    depths[i] = 0;
+  }
+  printf("Average = %g\n", average);
+
+  printf("\n=== Neutral ===\n");
+
+  for (size_t i = 0; i < N; ++i) {
+    int seed = rand();
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_scramble(&ldc);
+    unsigned char white_depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_z(&ldc);
+    unsigned char orange_depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_z2(&ldc);
+    unsigned char yellow_depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z(&ldc);
+    locdir_scramble(&ldc);
+    locdir_z_prime(&ldc);
+    unsigned char red_depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_x(&ldc);
+    unsigned char blue_depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x(&ldc);
+    locdir_scramble(&ldc);
+    locdir_x_prime(&ldc);
+    unsigned char green_depth = nibble_depth(&tablebase, &ldc);
+
+    unsigned char depth = orange_depth < white_depth ? orange_depth : white_depth;
+    depth = depth < yellow_depth ? depth : yellow_depth;
+    depth = depth < red_depth ? depth : red_depth;
+    depth = depth < blue_depth ? depth : blue_depth;
+    depth = depth < green_depth ? depth : green_depth;
+
+    depths[depth]++;
+  }
+
+  average = 0;
+  for (size_t i = 0; i < 9; ++i) {
+    printf("%zu: ", i);
+    double portion = ((double)depths[i]) / N;
+    for (size_t j = 0; j < portion * 100; ++j) {
+      printf("#");
+    }
+    printf(" %g%%\n", portion * 100);
+    average += i * portion;
+    depths[i] = 0;
+  }
+  printf("Average = %g\n", average);
+}
+
+int main() {
+  srand(time(NULL));
+
+  // solve_2x2x2();
+
+  // solve_3x3x3();
+
+  // pll_solutions();
+
+  // oll_solutions();
+
+  // cross_trainer();
+
+  cross_stats();
 
   return EXIT_SUCCESS;
 }
