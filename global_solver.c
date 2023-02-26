@@ -163,6 +163,10 @@ void prepare_global_solver() {
 
   GLOBAL_SOLVER.edge_ida.is_solved = global_edge_is_solved;
   GLOBAL_SOLVER.edge_ida.estimator = global_edge_estimator;
+
+  #ifdef _OPENMP
+  fprintf(stderr, "Parallel search enabled.\n");
+  #endif
 }
 
 sequence global_solve(LocDirCube *ldc) {
@@ -182,7 +186,11 @@ sequence global_solve(LocDirCube *ldc) {
   sequence first_steps = I;
   goal_depth = goalsphere_depth(&GLOBAL_SOLVER.goal, ldc, 0);
   if (goal_depth == UNKNOWN) {
+    #ifdef _OPENMP
+    ida_star_solve_parallel(&GLOBAL_SOLVER.ida, ldc, lower_bound);
+    #else
     ida_star_solve(&GLOBAL_SOLVER.ida, ldc, lower_bound);
+    #endif
     first_steps = ida_to_sequence(&GLOBAL_SOLVER.ida);
   }
   LocDirCube clone = *ldc;

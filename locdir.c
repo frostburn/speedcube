@@ -1,6 +1,6 @@
 // Locations and directions/orientations of cubies
 
-#define ALTERNATIVE_HASH 1
+#define ALTERNATIVE_HASH 0
 
 typedef struct {
   char corner_locs[8];

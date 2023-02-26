@@ -41,7 +41,7 @@ void solve_3x3x3() {
   for (size_t j = 0; j < 10; j++) {
     // locdir_scramble(&ldc);
     locdir_reset(&ldc);
-    for (size_t i = 0; i < 13; ++i) {
+    for (size_t i = 0; i < 15; ++i) {
       locdir_apply_stable(&ldc, STABLE_MOVES[rand() % NUM_STABLE_MOVES]);
     }
 
@@ -62,7 +62,7 @@ void solve_3x3x3() {
   printf("Collecting statistics...\n");
 
   clock_t start = clock();
-  size_t total_solves = 2;
+  size_t total_solves = 1;
   size_t total_moves = 0;
   size_t min_moves = ~0ULL;
   size_t max_moves = 0;
@@ -554,7 +554,7 @@ int main() {
 
   // solve_2x2x2();
 
-  // solve_3x3x3();
+  solve_3x3x3();
 
   // pll_solutions();
 
@@ -562,7 +562,7 @@ int main() {
 
   // cross_trainer();
 
-  xcross_trainer();
+  // xcross_trainer();
 
   // cross_stats();
 
