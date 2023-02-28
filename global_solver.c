@@ -195,7 +195,7 @@ sequence global_solve(LocDirCube *ldc) {
   }
   LocDirCube clone = *ldc;
   locdir_apply_sequence(&clone, first_steps);
-  sequence final_steps = goalsphere_solve(&GLOBAL_SOLVER.goal, &clone, 0);
+  sequence final_steps = goalsphere_solve(&GLOBAL_SOLVER.goal, &clone, 0, &is_better);
   return concat(first_steps, final_steps);
 }
 

@@ -74,6 +74,16 @@ void locdir_reset_xcross(LocDirCube *ldc) {
   ldc->corner_locs[4] = 4;
 }
 
+void locdir_reset_f2l(LocDirCube *ldc) {
+  locdir_reset_xcross(ldc);
+  ldc->edge_locs[5] = 5;
+  ldc->corner_locs[5] = 5;
+  ldc->edge_locs[6] = 6;
+  ldc->corner_locs[6] = 6;
+  ldc->edge_locs[7] = 7;
+  ldc->corner_locs[7] = 7;
+}
+
 bool locdir_equals(LocDirCube *a, LocDirCube *b) {
   for (int i = 0; i < 8; ++i) {
     if (a->corner_locs[i] != b->corner_locs[i]) {
@@ -379,6 +389,34 @@ size_t locdir_xcross_index(LocDirCube *ldc) {
 }
 
 const size_t LOCDIR_XCROSS_INDEX_SPACE = LOCDIR_CROSS_INDEX_SPACE * 8*2 * 8*3;
+
+size_t locdir_f2l_index(LocDirCube *ldc) {
+  size_t result = 0;
+  for (int i = 0; i < 8; ++i) {
+    char loc = ldc->edge_locs[4 + i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[4 + j] < ldc->edge_locs[4 + i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[4 + i] + 2 * result;
+  }
+
+  for (int i = 0; i < 4; ++i) {
+    char loc = ldc->corner_locs[4 + i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->corner_locs[4 + j] < ldc->corner_locs[4 + i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (8 - i);
+    result = ldc->corner_dirs[4 + i] + 3 * result;
+  }
+  return result;
+}
+
+const size_t LOCDIR_F2L_INDEX_SPACE = 12ULL*11*10*9 * 8*7*6*5 * 2*2*2*2 * 2*2*2*2 * 8*7*6*5 * 3*3*3*3;
 
 size_t locdir_centerless_hash(LocDirCube *ldc) {
   #if ALTERNATIVE_HASH

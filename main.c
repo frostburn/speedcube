@@ -184,7 +184,7 @@ void pll_solutions() {
   for (size_t i = 0; i < num_cases; ++i) {
     Cube cube = to_cube(cases + i);
     rotate_x_prime(&cube);
-    sequence solution = goalsphere_solve(&sphere, cases + i, search_depth);
+    sequence solution = goalsphere_solve(&sphere, cases + i, search_depth, &is_better);
     if (solution == INVALID) {
       printf("Not solvable in %zu moves or less. Switching to IDA*...\n", sphere.num_sets - 1 + search_depth);
 

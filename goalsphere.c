@@ -123,11 +123,13 @@ unsigned char goalsphere_depth(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
   return search(0);
 }
 
-sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
+sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth, bool (*better)(sequence a, sequence b)) {
   if (sphere->num_sets < 1) {
     return INVALID;
   }
-  if (sphere->sets[0][0] == sphere->hash_func(ldc)) {
+  LocDirCube aligned = *ldc;
+  locdir_realign(&aligned);
+  if (sphere->sets[0][0] == sphere->hash_func(&aligned)) {
     return I;
   }
   LocDirCube path[SEQUENCE_MAX_LENGTH];
@@ -137,7 +139,6 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
   sequence solve(unsigned char search_depth_) {
     unsigned char best_depth = UNKNOWN;
     LocDirCube children[NUM_MOVES - 1];
-    LocDirCube aligned;
     bool best[NUM_MOVES - 1];
     size_t i = 0;
     for (enum move m = U; m <= MAX_MOVE; ++m) {
@@ -168,15 +169,16 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
       i++;
     }
 
-    // TODO: Add support for custom sequence ranking and fix this part
+    sequence solution = INVALID;
     if (best_depth == 0) {
       i = 0;
       for (enum move m = U; m <= MAX_MOVE; ++m) {
-        if (best[i]) {
-          return m;
+        if (best[i] && (*better)(m, solution)) {
+          solution = m;
         }
         i++;
       }
+      return solution;
     }
 
     if (best_depth == UNKNOWN) {
@@ -186,14 +188,13 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
     if (search_depth_ > 0) {
       search_depth_--;
     }
-    sequence solution = INVALID;
     i = 0;
     for (enum move m = U; m <= MAX_MOVE; ++m) {
       if (best[i]) {
         path[path_length++] = children[i];
         sequence candidate = concat(m, solve(search_depth_));
         path_length--;
-        if (is_better(candidate, solution)) {
+        if ((*better)(candidate, solution)) {
           solution = candidate;
         }
       }
