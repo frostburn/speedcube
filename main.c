@@ -616,8 +616,8 @@ void solve_f2l_pair() {
       }
       Cube cube = to_cube(cases + i);
       rotate_x_prime(&cube);
-      render(&cube);
       print_sequence(solutions[i]);
+      render(&cube);
       printf("\n");
     }
   }

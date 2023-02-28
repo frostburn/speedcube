@@ -376,6 +376,8 @@ bool is_better(sequence a, sequence b) {
 
 int semistable_score(enum move m) {
   switch(m) {
+    case I:
+      return -1;
     case U:
       return 0;
     case U_prime:
@@ -443,8 +445,8 @@ bool is_better_semistable(sequence a, sequence b) {
     return true;
   }
   bool lexicographic = (a < b);
-  int score_a = 0;
-  int score_b = 0;
+  int score_a = -1;
+  int score_b = -1;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     int move_a = a % NUM_MOVES;
     int move_b = b % NUM_MOVES;
