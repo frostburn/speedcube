@@ -14,38 +14,6 @@
 #include "ida_star.c"
 #include "global_solver.c"
 
-char *sticker_fill(Cube *cube, bitboard p) {
-  bitboard red = cube->a & ~cube->b & ~cube->c;
-  bitboard green = ~cube->a & cube->b & ~cube->c;
-  bitboard orange = cube->a & cube->b & ~cube->c;
-  bitboard blue = ~cube->a & ~cube->b & cube->c;
-  bitboard yellow = cube->a & ~cube->b & cube->c;
-  bitboard white = ~cube->a & cube->b & cube->c;
-  bitboard purple = cube->a & cube->b & cube->c;
-  if (p & red) {
-    return "red";
-  }
-  if (p & green) {
-    return "lime";
-  }
-  if (p & orange) {
-    return "orange";
-  }
-  if (p & blue) {
-    return "blue";
-  }
-  if (p & yellow) {
-    return "yellow";
-  }
-  if (p & white) {
-    return "white";
-  }
-  if (p & purple) {
-    return "purple";
-  }
-  return "black";
-}
-
 /* Display the F face as blue. */
 char *jperm_sticker_fill(Cube *cube, bitboard p) {
   bitboard red = cube->a & ~cube->b & ~cube->c;
