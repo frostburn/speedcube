@@ -125,11 +125,23 @@ bool locdir_centerless_solved(LocDirCube *ldc) {
 
 bool locdir_solved(LocDirCube *ldc) {
   for (int i = 0; i < 6; ++i) {
-    if (ldc->corner_locs[i] != i) {
+    if (ldc->center_locs[i] != i) {
       return false;
     }
   }
   return locdir_centerless_solved(ldc);
+}
+
+bool locdir_cross_solved(LocDirCube *ldc) {
+  for (int i = 8; i < 12; ++i) {
+    if (ldc->edge_locs[i] != i) {
+      return false;
+    }
+    if (!ldc->edge_dirs[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 size_t locdir_corner_index(LocDirCube *ldc) {

@@ -24,7 +24,7 @@ void solve_2x2x2() {
 
   for (int i = 0; i < 20; ++i) {
     locdir_scramble(&two_cubed);
-    print_sequence(nibble_solve(&tablebase, &two_cubed));
+    print_sequence(nibble_solve(&tablebase, &two_cubed, &is_better));
     Cube cube = to_cube(&two_cubed);
     render(&cube);
     printf("\n");
@@ -365,7 +365,7 @@ void cross_trainer() {
     while (getchar() != '\n');
     locdir_reset(&ldc);
     locdir_apply_sequence(&ldc, s);
-    sequence solution = nibble_solve(&tablebase, &ldc);
+    sequence solution = nibble_solve(&tablebase, &ldc, &is_better);
     print_sequence(solution);
     printf("\n");
   }
@@ -410,10 +410,12 @@ void xcross_trainer() {
     while (getchar() != '\n');
     locdir_reset(&ldc);
     locdir_apply_sequence(&ldc, s);
-    sequence solution = nibble_solve(&tablebase, &ldc);
+    sequence solution = nibble_solve(&tablebase, &ldc, &is_better);
     print_sequence(solution);
     printf("\n");
   }
+
+  free_nibblebase(&tablebase);
 }
 
 void cross_stats() {
@@ -549,12 +551,88 @@ void cross_stats() {
   printf("Average = %g\n", average);
 }
 
+void solve_f2l_pair() {
+  FILE *fptr;
+  size_t num_read;
+  size_t tablebase_size;
+
+  fprintf(stderr, "Loading tablebase for xcross.\n");
+  Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
+  fptr = fopen("./tables/xcross.bin", "rb");
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_XCROSS_INDEX_SPACE + 1)/2;
+  num_read = fread(tablebase.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
+
+
+  printf("Generating cases...\n");
+  LocDirCube root;
+
+  LocDirCube *cases = malloc(384 * sizeof(LocDirCube));
+  size_t num_cases = 0;
+
+  locdir_reset_xcross(&root);
+  for (int i = 0; i < 6; ++i) {
+    root.center_locs[i] = i;
+  }
+  for (int i = 0; i < 8; ++i) {
+    root.corner_locs[4] = i;
+    for (int j = 0; j < 3; ++j) {
+      root.corner_dirs[4] = j;
+      for (int k = 0; k < 8; ++k) {
+        root.edge_locs[4] = k;
+        for (int l = 0; l < 2; ++l) {
+          root.edge_dirs[4] = l;
+          cases[num_cases++] = root;
+        }
+      }
+    }
+  }
+
+  printf("%zu cases generated\n", num_cases);
+
+  sequence *solutions = malloc(384 * sizeof(sequence));
+  size_t num_solutions;
+  int max_length = 0;
+
+  for (size_t i = 0; i < num_cases; ++i) {
+    solutions[num_solutions++] = nibble_solve(&tablebase, cases + i, &is_better_semistable);
+    int length = sequence_length(solutions[num_solutions - 1]);
+    max_length = max_length > length ? max_length : length;
+  }
+
+  for (int l = 0; l <= max_length; ++l) {
+    printf("Optimal solutions of length %d:\n", l);
+    for (size_t i = 0; i < num_cases; ++i) {
+      if (sequence_length(solutions[i]) != l) {
+        continue;
+      }
+      Cube cube = to_cube(cases + i);
+      rotate_x_prime(&cube);
+      render(&cube);
+      print_sequence(solutions[i]);
+      printf("\n");
+    }
+  }
+
+  free(cases);
+  free(solutions);
+  free_nibblebase(&tablebase);
+}
+
 int main() {
   srand(time(NULL));
 
   // solve_2x2x2();
 
-  solve_3x3x3();
+  // solve_3x3x3();
 
   // pll_solutions();
 
@@ -565,6 +643,8 @@ int main() {
   // xcross_trainer();
 
   // cross_stats();
+
+  solve_f2l_pair();
 
   return EXIT_SUCCESS;
 }

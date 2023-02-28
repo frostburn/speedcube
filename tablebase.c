@@ -97,7 +97,7 @@ unsigned char nibble_depth(Nibblebase *tablebase, LocDirCube *ldc) {
   return get_nibble(tablebase, (*tablebase->index_func)(ldc));
 }
 
-sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc) {
+sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc, bool (*better)(sequence a, sequence b)) {
   unsigned char depth = nibble_depth(tablebase, ldc);
   if (depth == 0) {
     return I;
@@ -126,26 +126,27 @@ sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc) {
       i++;
     }
 
+    sequence solution = INVALID;
     if (best_depth == 0) {
       i = 0;
       for (enum move m = U; m <= MAX_MOVE; ++m) {
-        if (best[i]) {
-          return m;
+        if (best[i] && (*better)(m, solution)) {
+          solution = m;
         }
         i++;
       }
+      return solution;
     }
 
     if (best_depth == UNKNOWN) {
       return INVALID;
     }
 
-    sequence solution = INVALID;
     i = 0;
     for (enum move m = U; m <= MAX_MOVE; ++m) {
       if (best[i]) {
         sequence candidate = concat(m, solve(children + i));
-        if (is_better(candidate, solution)) {
+        if ((*better)(candidate, solution)) {
           solution = candidate;
         }
       }

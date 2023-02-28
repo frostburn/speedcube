@@ -374,6 +374,108 @@ bool is_better(sequence a, sequence b) {
   return lexicographic;
 }
 
+int semistable_score(enum move m) {
+  switch(m) {
+    case U:
+      return 0;
+    case U_prime:
+      return 1;
+    case R:
+      return 2;
+    case R_prime:
+      return 3;
+    case F:
+      return 4;
+    case F_prime:
+      return 5;
+    case U2:
+      return 6;
+    case R2:
+      return 7;
+    case F2:
+      return 8;
+    case D:
+      return 9;
+    case D_prime:
+      return 10;
+    case D2:
+      return 11;
+    case L:
+      return 12;
+    case L_prime:
+      return 13;
+    case L2:
+      return 14;
+    case B:
+      return 15;
+    case B_prime:
+      return 16;
+    case B2:
+      return 17;
+    case M_prime:
+      return 18;
+    case M2:
+      return 19;
+    case M:
+      return 20;
+    case S:
+      return 21;
+    case S_prime:
+      return 22;
+    case E_prime:
+      return 23;
+    case E:
+      return 24;
+    case S2:
+      return 25;
+    case E2:
+      return 26;
+    default:
+      return 27 + m;
+  }
+}
+
+bool is_better_semistable(sequence a, sequence b) {
+  if (a == INVALID) {
+    return false;
+  }
+  if (b == INVALID) {
+    return true;
+  }
+  bool lexicographic = (a < b);
+  int score_a = 0;
+  int score_b = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    int move_a = a % NUM_MOVES;
+    int move_b = b % NUM_MOVES;
+    // Shorter
+    if (!move_a && move_b) {
+      return true;
+    }
+    // Longer
+    if (move_a && !move_b) {
+      return false;
+    }
+    move_a = semistable_score(move_a);
+    score_a = score_a > move_a ? score_a : move_a;
+    move_b = semistable_score(move_b);
+    score_b = score_b > move_b ? score_b : move_b;
+
+    a /= NUM_MOVES;
+    b /= NUM_MOVES;
+  }
+  // Simpler
+  if (score_a < score_b) {
+    return true;
+  }
+  // More complex
+  if (score_a > score_b) {
+    return false;
+  }
+  // Use lexicographic order
+  return lexicographic;
+}
+
 int sequence_complexity(sequence seq) {
   int result = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {

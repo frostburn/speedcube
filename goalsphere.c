@@ -168,6 +168,7 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
       i++;
     }
 
+    // TODO: Add support for custom sequence ranking and fix this part
     if (best_depth == 0) {
       i = 0;
       for (enum move m = U; m <= MAX_MOVE; ++m) {
