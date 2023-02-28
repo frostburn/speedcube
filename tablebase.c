@@ -98,7 +98,9 @@ unsigned char nibble_depth(Nibblebase *tablebase, LocDirCube *ldc) {
 }
 
 sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc, bool (*better)(sequence a, sequence b)) {
-  unsigned char depth = nibble_depth(tablebase, ldc);
+  LocDirCube aligned = *ldc;
+  locdir_realign(&aligned);
+  unsigned char depth = nibble_depth(tablebase, &aligned);
   if (depth == 0) {
     return I;
   }
@@ -106,7 +108,6 @@ sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc, bool (*better)(seq
   sequence solve(LocDirCube *parent) {
     unsigned char best_depth = UNKNOWN;
     LocDirCube children[NUM_MOVES - 1];
-    LocDirCube aligned;
     bool best[NUM_MOVES - 1];
     size_t i = 0;
     for (enum move m = U; m <= MAX_MOVE; ++m) {
