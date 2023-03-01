@@ -18,7 +18,11 @@ int main() {
 
   fprintf(stderr, "Loading tablebase for xcross.\n");
   Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/xcross_scissors.bin", "rb");
+  #else
   fptr = fopen("./tables/xcross.bin", "rb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
@@ -72,7 +76,11 @@ int main() {
 
   printf("<html>\n");
   printf("<head>\n");
+  #if SCISSORS_ENABLED
+  printf("<title>Shortest F2L algorithms (first pair, scissor turn metric)</title>\n");
+  #else
   printf("<title>Shortest F2L algorithms (first pair, slice turn metric)</title>\n");
+  #endif
   printf("<style>\n");
   printf("table, th, td {border: 1px solid;}\n");
   printf("td {text-align:center; padding:0.5em;}\n");
@@ -89,6 +97,9 @@ int main() {
   printf("<span style=\"color:lime\">Green</span> face is <b>B</b>ack.<br>");
   printf("<span style=\"color:orange\">Orange</span> face is <b>L</b>eft.<br>");
   printf("White face is <b>D</b>own.</p>");
+  #if SCISSORS_ENABLED
+  printf("<p>Scissor moves are defined as follows and can in principle be performed in one single motion:<br>m = R L<br>e = U D<br>s = F B</p>");
+  #endif
 
   for (int l = 2; l <= max_length; ++l) {
     int length = l;

@@ -98,46 +98,9 @@ void solve_3x3x3() {
 void pll_solutions() {
   prepare_global_solver();
 
-  FILE *fptr;
-
-  printf("Loading database for the last 6 moves.\n");
-  GoalSphere sphere;
-  sphere.hash_func = locdir_centerless_hash;
-  sphere.num_sets = 6 + 1;
-  sphere.sets = malloc(sphere.num_sets * sizeof(size_t*));
-  sphere.set_sizes = malloc(sphere.num_sets * sizeof(size_t));
-  sphere.set_sizes[0] = 1;
-  sphere.set_sizes[1] = 27;
-  sphere.set_sizes[2] = 501;
-  sphere.set_sizes[3] = 9175;
-  sphere.set_sizes[4] = 164900;
-  sphere.set_sizes[5] = 2912447;
-  sphere.set_sizes[6] = 50839041;
-  fptr = fopen("./tables/centerless_sphere.bin", "rb");
-  if (fptr == NULL) {
-    fprintf(stderr, "Failed to open file.\n");
-    exit(EXIT_FAILURE);
-  }
-  for (size_t i = 0; i < sphere.num_sets; ++i) {
-    sphere.sets[i] = malloc(sphere.set_sizes[i] * sizeof(size_t));
-    size_t num_read = fread(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
-    if (num_read != sphere.set_sizes[i]) {
-      fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, sphere.set_sizes[i]);
-      exit(EXIT_FAILURE);
-    }
-  }
-  fclose(fptr);
-
   LocDirCube root;
 
-  /*
-  printf("Generating a goal sphere of radius 7\n");
-  locdir_reset(&root);
-  GoalSphere sphere = init_goalsphere(&root, 7, &locdir_centerless_hash);
-  printf("Done\n");
-  */
-
-  LocDirCube *cases = malloc(96 * sizeof(LocDirCube));
+  LocDirCube *cases = malloc(288 * sizeof(LocDirCube));
   size_t num_cases = 0;
 
   sequence Ga = parse("R2 U R' U R' U' R U' R2 U' D R' U R D'");
@@ -184,15 +147,13 @@ void pll_solutions() {
   for (size_t i = 0; i < num_cases; ++i) {
     Cube cube = to_cube(cases + i);
     rotate_x_prime(&cube);
-    sequence solution = goalsphere_solve(&sphere, cases + i, search_depth, &is_better);
+    sequence solution = goalsphere_solve(&GLOBAL_SOLVER.goal, cases + i, search_depth, &is_better);
     if (solution == INVALID) {
-      printf("Not solvable in %zu moves or less. Switching to IDA*...\n", sphere.num_sets - 1 + search_depth);
+      printf("Not solvable in %zu moves or less. Switching to IDA*...\n", GLOBAL_SOLVER.goal.num_sets - 1 + search_depth);
 
-      ida_star_solve(&GLOBAL_SOLVER.ida, cases + i, 0);
+      solution = global_solve(cases + i);
+      printf("Solved in %d moves\n", sequence_length(solution));
 
-      printf("Found a solution in %zu moves:\n", GLOBAL_SOLVER.ida.path_length - 1);
-
-      solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
       print_sequence(solution);
     } else {
       num_solvable++;
@@ -212,7 +173,6 @@ void pll_solutions() {
   printf("%zu of %zu were solved with the most comfortable solution.\n", num_solvable, num_cases);
 
   free(cases);
-  free_goalsphere(&sphere);
   free_global_solver();
 }
 
@@ -426,7 +386,7 @@ void cross_stats() {
 
   size_t depths[9] = {0};
 
-  size_t N = 10000;
+  size_t N = 100000;
 
   printf("=== Single ===\n");
   for (size_t i = 0; i < N; ++i) {
@@ -558,7 +518,11 @@ void solve_f2l_pair() {
 
   fprintf(stderr, "Loading tablebase for xcross.\n");
   Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/xcross_scissors.bin", "rb");
+  #else
   fptr = fopen("./tables/xcross.bin", "rb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
@@ -634,7 +598,7 @@ int main() {
 
   // solve_3x3x3();
 
-  // pll_solutions();
+  pll_solutions();
 
   // oll_solutions();
 
@@ -644,7 +608,7 @@ int main() {
 
   // cross_stats();
 
-  solve_f2l_pair();
+  // solve_f2l_pair();
 
   return EXIT_SUCCESS;
 }

@@ -187,7 +187,11 @@ int main() {
 
   printf("<html>\n");
   printf("<head>\n");
+  #if SCISSORS_ENABLED
+  printf("<title>Shortest OLL algorithms (scissor turn metric)</title>\n");
+  #else
   printf("<title>Shortest OLL algorithms (slice turn metric)</title>\n");
+  #endif
   printf("<style>\n");
   printf("table, th, td {border: 1px solid;}\n");
   printf("td {text-align:center; padding:0.5em;}\n");
@@ -199,6 +203,9 @@ int main() {
   printf("<p>OLL (Orientation of the Last Layer) solves the top color of the last layer.</p>\n");
   printf("<p>Next step: <a href=\"pll.html\">PLL</a></p>\n");
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
+  #if SCISSORS_ENABLED
+  printf("<p>Scissor moves are defined as follows and can in principle be performed in one single motion:<br>m = R L<br>e = U D<br>s = F B</p>");
+  #endif
   printf("<table>\n");
 
   printf("<tr>\n");
@@ -289,7 +296,11 @@ int main() {
       oll_svg(cubes + j);
       printf("</td>\n");
       printf("<td>\n");
+      #if SCISSORS_ENABLED
+      printf("<a href=\"txt/oll_scissors_%zu_%zu.txt\">\n", i, j);
+      #else
       printf("<a href=\"txt/oll_%zu_%zu.txt\">\n", i, j);
+      #endif
       print_sequence(solution);
       printf("</a>\n");
       printf("</td>\n");
@@ -297,7 +308,11 @@ int main() {
       printf("<td>%d</td>\n", sequence_complexity(solution));
       printf("</tr>\n");
 
+      #if SCISSORS_ENABLED
+      sprintf(filename, "txt/oll_scissors_%zu_%zu.txt", i, j);
+      #else
       sprintf(filename, "txt/oll_%zu_%zu.txt", i, j);
+      #endif
       FILE *fptr = fopen(filename, "w");
       candidate = solutions;
       while (*candidate != SENTINEL) {
