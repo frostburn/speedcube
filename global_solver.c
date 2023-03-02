@@ -123,12 +123,12 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.goal.set_sizes = malloc(GLOBAL_SOLVER.goal.num_sets * sizeof(size_t));
   GLOBAL_SOLVER.goal.set_sizes[0] = 1;
   #if SCISSORS_ENABLED
-  GLOBAL_SOLVER.goal.set_sizes[1] = 33;
-  GLOBAL_SOLVER.goal.set_sizes[2] = 735;
-  GLOBAL_SOLVER.goal.set_sizes[3] = 16183;
-  GLOBAL_SOLVER.goal.set_sizes[4] = 348926;
-  GLOBAL_SOLVER.goal.set_sizes[5] = 7268624;
-  GLOBAL_SOLVER.goal.set_sizes[6] = 148062628;
+  GLOBAL_SOLVER.goal.set_sizes[1] = 45;
+  GLOBAL_SOLVER.goal.set_sizes[2] = 1347;
+  GLOBAL_SOLVER.goal.set_sizes[3] = 39631;
+  GLOBAL_SOLVER.goal.set_sizes[4] = 1152290;
+  GLOBAL_SOLVER.goal.set_sizes[5] = 32717804;
+  GLOBAL_SOLVER.goal.set_sizes[6] = 917301225;
   fptr = fopen("./tables/centerless_sphere_scissors.bin", "rb");
   #else
   GLOBAL_SOLVER.goal.set_sizes[1] = 27;
@@ -160,12 +160,12 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.edge_goal.set_sizes = malloc(GLOBAL_SOLVER.edge_goal.num_sets * sizeof(size_t));
   GLOBAL_SOLVER.edge_goal.set_sizes[0] = 1;
   #if SCISSORS_ENABLED
-  GLOBAL_SOLVER.edge_goal.set_sizes[1] = 33;
-  GLOBAL_SOLVER.edge_goal.set_sizes[2] = 735;
-  GLOBAL_SOLVER.edge_goal.set_sizes[3] = 16059;
-  GLOBAL_SOLVER.edge_goal.set_sizes[4] = 327692;
-  GLOBAL_SOLVER.edge_goal.set_sizes[5] = 6093513;
-  GLOBAL_SOLVER.edge_goal.set_sizes[6] = 107477715;
+  GLOBAL_SOLVER.edge_goal.set_sizes[1] = 45;
+  GLOBAL_SOLVER.edge_goal.set_sizes[2] = 1347;
+  GLOBAL_SOLVER.edge_goal.set_sizes[3] = 39471;
+  GLOBAL_SOLVER.edge_goal.set_sizes[4] = 1090256;
+  GLOBAL_SOLVER.edge_goal.set_sizes[5] = 28178805;
+  GLOBAL_SOLVER.edge_goal.set_sizes[6] = 690100863;
   fptr = fopen("./tables/edge_sphere_scissors.bin", "rb");
   #else
   GLOBAL_SOLVER.edge_goal.set_sizes[1] = 27;

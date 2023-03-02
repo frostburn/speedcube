@@ -192,7 +192,7 @@ void pll_svg(LocDirCube *ldc) {
 }
 
 int main() {
-  size_t search_depth = 2;
+  size_t search_depth = 4;
   prepare_global_solver();
 
   LocDirCube root;
@@ -474,7 +474,7 @@ int main() {
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
   printf("<p>Solutions obtained using IDA* are as short as possible, but not necessarily the easiest to perform.</p>\n");
   #if SCISSORS_ENABLED
-  printf("<p>Scissor moves are defined as follows and can in principle be performed in one single motion:<br>m = R L<br>e = U D<br>s = F B</p>");
+  printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
   printf("<table>\n");
 

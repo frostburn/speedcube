@@ -1,7 +1,7 @@
 typedef unsigned __int128 sequence;
 
 #if SCISSORS_ENABLED
-#define SEQUENCE_MAX_LENGTH (22)
+#define SEQUENCE_MAX_LENGTH (21)
 #else
 #define SEQUENCE_MAX_LENGTH (23)
 #endif
@@ -150,23 +150,59 @@ sequence invert(sequence seq) {
       case S_prime:
         move = S;
         break;
-      case e:
-        move = e_prime;
+      case UD:
+        move = UpDp;
         break;
-      case e_prime:
-        move = e;
+      case UpDp:
+        move = UD;
         break;
-      case s:
-        move = s_prime;
+      case U2D:
+        move = U2Dp;
         break;
-      case s_prime:
-        move = s;
+      case U2Dp:
+        move = U2D;
         break;
-      case m:
-        move = m_prime;
+      case D2U:
+        move = D2Up;
         break;
-      case m_prime:
-        move = m;
+      case D2Up:
+        move = D2U;
+        break;
+      case FB:
+        move = FpBp;
+        break;
+      case FpBp:
+        move = FB;
+        break;
+      case F2B:
+        move = F2Bp;
+        break;
+      case F2Bp:
+        move = F2B;
+        break;
+      case B2F:
+        move = B2Fp;
+        break;
+      case B2Fp:
+        move = B2F;
+        break;
+      case RL:
+        move = RpLp;
+        break;
+      case RpLp:
+        move = RL;
+        break;
+      case R2L:
+        move = R2Lp;
+        break;
+      case R2Lp:
+        move = R2L;
+        break;
+      case L2R:
+        move = L2Rp;
+        break;
+      case L2Rp:
+        move = L2R;
         break;
     }
     if (move != I) {
@@ -338,32 +374,59 @@ void fprint_sequence(FILE *file, sequence seq) {
       case S2:
         fprintf(file, "S2 ");
         break;
-      case e:
-        fprintf(file, "e ");
+      case UD:
+        fprintf(file, "[UD] ");
         break;
-      case e_prime:
-        fprintf(file, "e' ");
+      case UpDp:
+        fprintf(file, "[U'D'] ");
         break;
-      case e2:
-        fprintf(file, "e2 ");
+      case U2D:
+        fprintf(file, "[U2D] ");
         break;
-      case s:
-        fprintf(file, "s ");
+      case U2Dp:
+        fprintf(file, "[U2D'] ");
         break;
-      case s_prime:
-        fprintf(file, "s' ");
+      case D2U:
+        fprintf(file, "[D2U] ");
         break;
-      case s2:
-        fprintf(file, "s2 ");
+      case D2Up:
+        fprintf(file, "[D2U'] ");
         break;
-      case m:
-        fprintf(file, "m ");
+      case FB:
+        fprintf(file, "[FB] ");
         break;
-      case m_prime:
-        fprintf(file, "m' ");
+      case FpBp:
+        fprintf(file, "[F'B'] ");
         break;
-      case m2:
-        fprintf(file, "m2 ");
+      case F2B:
+        fprintf(file, "[F2B] ");
+        break;
+      case F2Bp:
+        fprintf(file, "[F2B'] ");
+        break;
+      case B2F:
+        fprintf(file, "[B2F] ");
+        break;
+      case B2Fp:
+        fprintf(file, "[B2F'] ");
+        break;
+      case RL:
+        fprintf(file, "[RL] ");
+        break;
+      case RpLp:
+        fprintf(file, "[R'L'] ");
+        break;
+      case R2L:
+        fprintf(file, "[R2L] ");
+        break;
+      case R2Lp:
+        fprintf(file, "[R2L'] ");
+        break;
+      case L2R:
+        fprintf(file, "[L2R] ");
+        break;
+      case L2Rp:
+        fprintf(file, "[L2R'] ");
         break;
       case I:
         break;
@@ -481,20 +544,44 @@ int semistable_score(enum move move) {
       return 25;
     case E2:
       return 26;
-    case e:
+    case UD:
       return 27;
-    case e_prime:
+    case UpDp:
       return 28;
-    case s:
+    case FB:
       return 29;
-    case s_prime:
+    case FpBp:
       return 30;
-    case m:
+    case U2D:
       return 31;
-    case m_prime:
+    case U2Dp:
       return 32;
+    case D2U:
+      return 33;
+    case D2Up:
+      return 34;
+    case F2B:
+      return 35;
+    case F2Bp:
+      return 36;
+    case B2F:
+      return 37;
+    case B2Fp:
+      return 38;
+    case RL:
+      return 39;
+    case RpLp:
+      return 40;
+    case R2L:
+      return 41;
+    case R2Lp:
+      return 42;
+    case L2R:
+      return 43;
+    case L2Rp:
+      return 44;
     default:
-      return 33 + move;
+      return 45 + move;
   }
 }
 
@@ -596,12 +683,6 @@ enum move parse_move(char chr) {
       return E;
     case 'S':
       return S;
-    case 'e':
-      return e;
-    case 's':
-      return s;
-    case 'm':
-      return m;
   }
   fprintf(stderr, "Unrecognized character %c\n", chr);
   exit(EXIT_FAILURE);
@@ -639,12 +720,6 @@ enum move parse_prime(char chr) {
       return E_prime;
     case 'S':
       return S_prime;
-    case 'e':
-      return e_prime;
-    case 's':
-      return s_prime;
-    case 'm':
-      return m_prime;
   }
   fprintf(stderr, "Unrecognized character %c\n", chr);
   exit(EXIT_FAILURE);
@@ -682,22 +757,17 @@ enum move parse_double(char chr) {
       return E2;
     case 'S':
       return S2;
-    case 'e':
-      return e2;
-    case 's':
-      return s2;
-    case 'm':
-      return m2;
   }
   fprintf(stderr, "Unrecognized character %c\n", chr);
   exit(EXIT_FAILURE);
 }
 
+// TODO: Parse scissor moves into their respective singles
 sequence parse(char *string) {
   if (string[0] == '\0') {
     return I;
   }
-  if (string[0] == ' ') {
+  if (string[0] == ' ' || string[0] == '[' || string[0] == ']') {
     return parse(string + 1);
   }
   if (string[1] == '\'') {
@@ -764,7 +834,7 @@ void apply_string(Cube *cube, char *string) {
   if (string[0] == '\0') {
     return;
   }
-  if (string[0] == ' ') {
+  if (string[0] == ' '  || string[0] == '[' || string[0] == ']') {
     apply_string(cube, string + 1);
   } else if (string[1] == '\'') {
     apply_char_prime(cube, string[0]);

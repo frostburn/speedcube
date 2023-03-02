@@ -98,7 +98,7 @@ int main() {
   printf("<span style=\"color:orange\">Orange</span> face is <b>L</b>eft.<br>");
   printf("White face is <b>D</b>own.</p>");
   #if SCISSORS_ENABLED
-  printf("<p>Scissor moves are defined as follows and can in principle be performed in one single motion:<br>m = R L<br>e = U D<br>s = F B</p>");
+  printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
 
   for (int l = 2; l <= max_length; ++l) {

@@ -1,7 +1,7 @@
 #define SCISSORS_ENABLED 1
 
 #if SCISSORS_ENABLED
-#define NUM_MOVES (55)
+#define NUM_MOVES (64)
 #else
 #define NUM_MOVES (46)
 #endif
@@ -41,15 +41,18 @@ enum move {
   S, S_prime, S2,
   b, b_prime, b2,
 
-  e, e_prime,
-  s, s_prime,
-  m, m_prime,
+  UD, UpDp,
+  FB, FpBp,
 
-  e2, s2, m2,
+  U2D, U2Dp, D2U, D2Up,
+  F2B, F2Bp, B2F, B2Fp,
+
+  RL, RpLp,
+  R2L, R2Lp, L2R, L2Rp,
 };
 
 #if SCISSORS_ENABLED
-const enum move MAX_MOVE = m2;
+const enum move MAX_MOVE = L2Rp;
 #else
 const enum move MAX_MOVE = b2;
 #endif
@@ -548,45 +551,6 @@ void slice_S2(Cube *cube) {
   rotate_x(cube);
 }
 
-void scissors_e(Cube *cube) {
-  turn_U(cube);
-  turn_D(cube);
-}
-void scissors_e_prime(Cube *cube) {
-  turn_U_prime(cube);
-  turn_D_prime(cube);
-}
-void scissors_e2(Cube *cube) {
-  turn_U2(cube);
-  turn_D2(cube);
-}
-
-void scissors_s(Cube *cube) {
-  turn_F(cube);
-  turn_B(cube);
-}
-void scissors_s_prime(Cube *cube) {
-  turn_F_prime(cube);
-  turn_B_prime(cube);
-}
-void scissors_s2(Cube *cube) {
-  turn_F2(cube);
-  turn_B2(cube);
-}
-
-void scissors_m(Cube *cube) {
-  turn_R(cube);
-  turn_L(cube);
-}
-void scissors_m_prime(Cube *cube) {
-  turn_R_prime(cube);
-  turn_L_prime(cube);
-}
-void scissors_m2(Cube *cube) {
-  turn_R2(cube);
-  turn_L2(cube);
-}
-
 void apply(Cube *cube, enum move move) {
   switch (move) {
     case I:
@@ -726,32 +690,77 @@ void apply(Cube *cube, enum move move) {
     case S2:
       slice_S2(cube);
       break;
-    case m:
-      scissors_m(cube);
+    case UD:
+      turn_U(cube);
+      turn_D(cube);
       break;
-    case m_prime:
-      scissors_m_prime(cube);
+    case UpDp:
+      turn_U_prime(cube);
+      turn_D_prime(cube);
       break;
-    case m2:
-      scissors_m2(cube);
+    case U2D:
+      turn_U2(cube);
+      turn_D(cube);
       break;
-    case e:
-      scissors_e(cube);
+    case U2Dp:
+      turn_U2(cube);
+      turn_D_prime(cube);
       break;
-    case e_prime:
-      scissors_e_prime(cube);
+    case D2U:
+      turn_D2(cube);
+      turn_U(cube);
       break;
-    case e2:
-      scissors_e2(cube);
+    case D2Up:
+      turn_D2(cube);
+      turn_U_prime(cube);
       break;
-    case s:
-      scissors_s(cube);
+    case FB:
+      turn_F(cube);
+      turn_B(cube);
       break;
-    case s_prime:
-      scissors_s_prime(cube);
+    case FpBp:
+      turn_F_prime(cube);
+      turn_B_prime(cube);
       break;
-    case s2:
-      scissors_s2(cube);
+    case F2B:
+      turn_F2(cube);
+      turn_B(cube);
+      break;
+    case F2Bp:
+      turn_F2(cube);
+      turn_B_prime(cube);
+      break;
+    case B2F:
+      turn_B2(cube);
+      turn_F(cube);
+      break;
+    case B2Fp:
+      turn_B2(cube);
+      turn_F_prime(cube);
+      break;
+    case RL:
+      turn_R(cube);
+      turn_L(cube);
+      break;
+    case RpLp:
+      turn_R_prime(cube);
+      turn_L_prime(cube);
+      break;
+    case R2L:
+      turn_R2(cube);
+      turn_L(cube);
+      break;
+    case R2Lp:
+      turn_R2(cube);
+      turn_L_prime(cube);
+      break;
+    case L2R:
+      turn_L2(cube);
+      turn_R(cube);
+      break;
+    case L2Rp:
+      turn_L2(cube);
+      turn_R_prime(cube);
       break;
     default:
       fprintf(stderr, "Unimplemented move\n");
