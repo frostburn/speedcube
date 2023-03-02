@@ -55,6 +55,7 @@ void oll_svg(Cube *cube) {
 
 int main() {
   size_t radius = 7;
+  radius = 6;
   size_t search_depth = 4;
 
   LocDirCube root;
@@ -204,7 +205,7 @@ int main() {
   printf("<p>Next step: <a href=\"pll.html\">PLL</a></p>\n");
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
   #if SCISSORS_ENABLED
-  printf("<p>Scissor moves are defined as follows and can in principle be performed in one single motion:<br>m = R L<br>e = U D<br>s = F B</p>");
+  printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
   printf("<table>\n");
 

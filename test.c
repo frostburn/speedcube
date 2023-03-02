@@ -231,7 +231,7 @@ void test_locdir() {
   }
 
   #if SCISSORS_ENABLED
-  assert(num_unique == 26);
+  assert(num_unique == 34);
   #else
   assert(num_unique == 22);
   #endif

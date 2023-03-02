@@ -163,12 +163,12 @@ void create_edge_sphere() {
   }
   // #if SCISSORS_ENABLED
   // Depth 0 has 1 unique configurations.
-  // Depth 1 has 33 unique configurations.
-  // Depth 2 has 735 unique configurations.
-  // Depth 3 has 16059 unique configurations.
-  // Depth 4 has 327692 unique configurations.
-  // Depth 5 has 6093513 unique configurations.
-  // Depth 6 has 107477715 unique configurations.
+  // Depth 1 has 45 unique configurations.
+  // Depth 2 has 1347 unique configurations.
+  // Depth 3 has 39471 unique configurations.
+  // Depth 4 has 1090256 unique configurations.
+  // Depth 5 has 28178805 unique configurations.
+  // Depth 6 has 690100863 unique configurations.
   // #else
   // Depth 0 has 1 unique configurations.
   // Depth 1 has 27 unique configurations.
@@ -208,12 +208,12 @@ void create_3x3x3_sphere() {
   }
   // #if SCISSORS_ENABLED
   // Depth 0 has 1 unique configurations.
-  // Depth 1 has 33 unique configurations.
-  // Depth 2 has 735 unique configurations.
-  // Depth 3 has 16183 unique configurations.
-  // Depth 4 has 348926 unique configurations.
-  // Depth 5 has 7268624 unique configurations.
-  // Depth 6 has 148062628 unique configurations.
+  // Depth 1 has 45 unique configurations.
+  // Depth 2 has 1347 unique configurations.
+  // Depth 3 has 39631 unique configurations.
+  // Depth 4 has 1152290 unique configurations.
+  // Depth 5 has 32717804 unique configurations.
+  // Depth 6 has 917301225 unique configurations.
   // #else
   // Depth 0 has 1 unique configurations.
   // Depth 1 has 27 unique configurations.
@@ -267,23 +267,19 @@ int main() {
   #if SCISSORS_ENABLED
   printf("Scissor moves enabled.\n");
   #endif
+
+  create_xcross_tablebase();
+
   create_corner_tablebase();
-  printf("Corners done.\n");
-  printf("\n");
 
   create_first_edges_tablebase();
   create_last_edges_tablebase();
 
   create_edge_sphere();
 
-  printf("Edges done.\n");
-  printf("\n");
-
   create_3x3x3_sphere();
 
   // create_oll_sphere();
-
-  // create_xcross_tablebase();
 
   return EXIT_SUCCESS;
 }
