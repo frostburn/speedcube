@@ -192,16 +192,20 @@ void pll_svg(LocDirCube *ldc) {
 }
 
 int main() {
+  size_t search_depth = 2;
   prepare_global_solver();
 
   LocDirCube root;
 
-  size_t search_depth = 5;
+  /*
+  search_depth = 5;
   size_t radius = 7;
   fprintf(stderr, "Generating a goal sphere of radius %zu.\n", radius);
   free_goalsphere(&GLOBAL_SOLVER.goal);
   locdir_reset(&root);
   GLOBAL_SOLVER.goal = init_goalsphere(&root, radius, &locdir_centerless_hash);
+  */
+
 
   char *names[] = {
     "Aa",
@@ -453,7 +457,11 @@ int main() {
 
   printf("<html>\n");
   printf("<head>\n");
+  #if SCISSORS_ENABLED
+  printf("<title>Shortest PLL algorithms (scissor turn metric)</title>\n");
+  #else
   printf("<title>Shortest PLL algorithms (slice turn metric)</title>\n");
+  #endif
   printf("<style>\n");
   printf("table, th, td {border: 1px solid;}\n");
   printf("td {text-align:center; padding:0.5em;}\n");
@@ -465,6 +473,9 @@ int main() {
   printf("<p>PLL (Permutation of the Last Layer) solves the cube after <a href=\"oll.html\">OLL</a>.</p>\n");
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
   printf("<p>Solutions obtained using IDA* are as short as possible, but not necessarily the easiest to perform.</p>\n");
+  #if SCISSORS_ENABLED
+  printf("<p>Scissor moves are defined as follows and can in principle be performed in one single motion:<br>m = R L<br>e = U D<br>s = F B</p>");
+  #endif
   printf("<table>\n");
 
   printf("<tr>\n");
@@ -610,7 +621,11 @@ int main() {
       }
       printf("<td>\n");
       if (solutions != NULL) {
+        #if SCISSORS_ENABLED
+        printf("<a href=\"txt/pll_scissors_%zu_%zu.txt\">\n", i, k);
+        #else
         printf("<a href=\"txt/pll_%zu_%zu.txt\">\n", i, k);
+        #endif
       }
       print_sequence(solution);
       if (solutions != NULL) {
@@ -623,7 +638,11 @@ int main() {
       printf("</tr>\n");
 
       if (solutions != NULL) {
+        #if SCISSORS_ENABLED
+        sprintf(filename, "txt/pll_scissors_%zu_%zu.txt", i, k);
+        #else
         sprintf(filename, "txt/pll_%zu_%zu.txt", i, k);
+        #endif
         FILE *fptr = fopen(filename, "w");
         sequence *candidate = solutions;
         while (*candidate != SENTINEL) {

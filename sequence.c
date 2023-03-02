@@ -1,6 +1,10 @@
 typedef unsigned __int128 sequence;
 
+#if SCISSORS_ENABLED
+#define SEQUENCE_MAX_LENGTH (22)
+#else
 #define SEQUENCE_MAX_LENGTH (23)
+#endif
 
 #define MAX_COMPLEXITY 1
 
@@ -10,11 +14,11 @@ const sequence INVALID = ~NOTHING;
 sequence from_moves(enum move *moves) {
   sequence result = 0;
   for(;;) {
-    enum move m = *moves;
-    if (m == I) {
+    enum move move = *moves;
+    if (move == I) {
       return result;
     }
-    result = NUM_MOVES * result + m;
+    result = NUM_MOVES * result + move;
     moves++;
   }
 }
@@ -145,6 +149,24 @@ sequence invert(sequence seq) {
         break;
       case S_prime:
         move = S;
+        break;
+      case e:
+        move = e_prime;
+        break;
+      case e_prime:
+        move = e;
+        break;
+      case s:
+        move = s_prime;
+        break;
+      case s_prime:
+        move = s;
+        break;
+      case m:
+        move = m_prime;
+        break;
+      case m_prime:
+        move = m;
         break;
     }
     if (move != I) {
@@ -316,6 +338,33 @@ void fprint_sequence(FILE *file, sequence seq) {
       case S2:
         fprintf(file, "S2 ");
         break;
+      case e:
+        fprintf(file, "e ");
+        break;
+      case e_prime:
+        fprintf(file, "e' ");
+        break;
+      case e2:
+        fprintf(file, "e2 ");
+        break;
+      case s:
+        fprintf(file, "s ");
+        break;
+      case s_prime:
+        fprintf(file, "s' ");
+        break;
+      case s2:
+        fprintf(file, "s2 ");
+        break;
+      case m:
+        fprintf(file, "m ");
+        break;
+      case m_prime:
+        fprintf(file, "m' ");
+        break;
+      case m2:
+        fprintf(file, "m2 ");
+        break;
       case I:
         break;
       default:
@@ -374,8 +423,8 @@ bool is_better(sequence a, sequence b) {
   return lexicographic;
 }
 
-int semistable_score(enum move m) {
-  switch(m) {
+int semistable_score(enum move move) {
+  switch(move) {
     case I:
       return -1;
     case U:
@@ -432,8 +481,20 @@ int semistable_score(enum move m) {
       return 25;
     case E2:
       return 26;
+    case e:
+      return 27;
+    case e_prime:
+      return 28;
+    case s:
+      return 29;
+    case s_prime:
+      return 30;
+    case m:
+      return 31;
+    case m_prime:
+      return 32;
     default:
-      return 27 + m;
+      return 33 + move;
   }
 }
 
@@ -535,6 +596,12 @@ enum move parse_move(char chr) {
       return E;
     case 'S':
       return S;
+    case 'e':
+      return e;
+    case 's':
+      return s;
+    case 'm':
+      return m;
   }
   fprintf(stderr, "Unrecognized character %c\n", chr);
   exit(EXIT_FAILURE);
@@ -572,6 +639,12 @@ enum move parse_prime(char chr) {
       return E_prime;
     case 'S':
       return S_prime;
+    case 'e':
+      return e_prime;
+    case 's':
+      return s_prime;
+    case 'm':
+      return m_prime;
   }
   fprintf(stderr, "Unrecognized character %c\n", chr);
   exit(EXIT_FAILURE);
@@ -609,6 +682,12 @@ enum move parse_double(char chr) {
       return E2;
     case 'S':
       return S2;
+    case 'e':
+      return e2;
+    case 's':
+      return s2;
+    case 'm':
+      return m2;
   }
   fprintf(stderr, "Unrecognized character %c\n", chr);
   exit(EXIT_FAILURE);
@@ -630,6 +709,75 @@ sequence parse(char *string) {
   return concat(parse_move(string[0]), parse(string + 1));
 }
 
+void apply_char(Cube *cube, char chr) {
+  switch (chr) {
+    case 'x':
+      rotate_x(cube);
+      break;
+    case 'y':
+      rotate_y(cube);
+      break;
+    case 'z':
+      rotate_z(cube);
+      break;
+    default:
+      apply(cube, parse_move(chr));
+      break;
+  }
+}
+
+void apply_char_prime(Cube *cube, char chr) {
+  switch (chr) {
+    case 'x':
+      rotate_x_prime(cube);
+      break;
+    case 'y':
+      rotate_y_prime(cube);
+      break;
+    case 'z':
+      rotate_z_prime(cube);
+      break;
+    default:
+      apply(cube, parse_prime(chr));
+      break;
+  }
+}
+
+void apply_char_double(Cube *cube, char chr) {
+  switch (chr) {
+    case 'x':
+      rotate_x2(cube);
+      break;
+    case 'y':
+      rotate_y2(cube);
+      break;
+    case 'z':
+      rotate_z2(cube);
+      break;
+    default:
+      apply(cube, parse_double(chr));
+      break;
+  }
+}
+
+void apply_string(Cube *cube, char *string) {
+  if (string[0] == '\0') {
+    return;
+  }
+  if (string[0] == ' ') {
+    apply_string(cube, string + 1);
+  } else if (string[1] == '\'') {
+    apply_char_prime(cube, string[0]);
+    apply_string(cube, string + 2);
+  } else if (string[1] == '2') {
+    apply_char_double(cube, string[0]);
+    apply_string(cube, string + 2);
+  } else {
+    apply_char(cube, string[0]);
+    apply_string(cube, string + 1);
+  }
+}
+
 #define NUM_FACE_TURNS (18)
 
 enum move FACE_TURNS[] = {
@@ -641,6 +789,7 @@ enum move FACE_TURNS[] = {
   B, B_prime, B2,
 };
 
+// TODO: Fix! This produced F L2 R' R' D2 R' D2 L' F' with R' repeated.
 sequence make_scramble(Cube *root, int length) {
   if (length > SEQUENCE_MAX_LENGTH) {
     fprintf(stderr, "Desired sramble length too long");
@@ -665,10 +814,10 @@ sequence make_scramble(Cube *root, int length) {
     prev_prev_face_bucket = prev_face_bucket;
     prev_face_bucket = face_bucket;
 
-    enum move m = FACE_TURNS[turn_index];
+    enum move move = FACE_TURNS[turn_index];
 
     path[index] = path[index - 1];
-    apply(path + index, m);
+    apply(path + index, move);
     bool in_path = false;
     for (int i = 0; i < index; ++i) {
       if (equals(path + i, path + index)) {
@@ -679,7 +828,7 @@ sequence make_scramble(Cube *root, int length) {
     if (in_path) {
       continue;
     }
-    result = m + result * NUM_MOVES;
+    result = move + result * NUM_MOVES;
     index++;
   }
   return result;

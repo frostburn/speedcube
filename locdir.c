@@ -1107,7 +1107,50 @@ void locdir_S2(LocDirCube *ldc) {
   locdir_y(ldc);
 }
 
+void locdir_e(LocDirCube *ldc) {
+  locdir_U(ldc);
+  locdir_D(ldc);
+}
+void locdir_e_prime(LocDirCube *ldc) {
+  locdir_U_prime(ldc);
+  locdir_D_prime(ldc);
+}
+void locdir_e2(LocDirCube *ldc) {
+  locdir_U2(ldc);
+  locdir_D2(ldc);
+}
+
+void locdir_s(LocDirCube *ldc) {
+  locdir_F(ldc);
+  locdir_B(ldc);
+}
+void locdir_s_prime(LocDirCube *ldc) {
+  locdir_F_prime(ldc);
+  locdir_B_prime(ldc);
+}
+void locdir_s2(LocDirCube *ldc) {
+  locdir_F2(ldc);
+  locdir_B2(ldc);
+}
+
+void locdir_m(LocDirCube *ldc) {
+  locdir_R(ldc);
+  locdir_L(ldc);
+}
+void locdir_m_prime(LocDirCube *ldc) {
+  locdir_R_prime(ldc);
+  locdir_L_prime(ldc);
+}
+void locdir_m2(LocDirCube *ldc) {
+  locdir_R2(ldc);
+  locdir_L2(ldc);
+}
+
+#if SCISSORS_ENABLED
+#define NUM_STABLE_MOVES (36)
+#else
 #define NUM_STABLE_MOVES (27)
+#endif
 
 // Slices re-interpreted as synchronized opposite side turns
 // Basically removes I, u, d, r, l, f and b.
@@ -1134,7 +1177,13 @@ enum move STABLE_MOVES[] = {
 
   E, E2, E_prime,
 
-  S, S_prime, S2
+  S, S_prime, S2,
+
+  e, e_prime,
+  s, s_prime,
+  m, m_prime,
+
+  e2, s2, m2,
 };
 
 void locdir_apply_stable(LocDirCube *ldc, enum move move) {
@@ -1228,6 +1277,33 @@ void locdir_apply_stable(LocDirCube *ldc, enum move move) {
     case S2:
       locdir_F2(ldc);
       locdir_B2(ldc);
+      break;
+    case e:
+      locdir_e(ldc);
+      break;
+    case e_prime:
+      locdir_e_prime(ldc);
+      break;
+    case e2:
+      locdir_e2(ldc);
+      break;
+    case s:
+      locdir_s(ldc);
+      break;
+    case s_prime:
+      locdir_s_prime(ldc);
+      break;
+    case s2:
+      locdir_s2(ldc);
+      break;
+    case m:
+      locdir_m(ldc);
+      break;
+    case m_prime:
+      locdir_m_prime(ldc);
+      break;
+    case m2:
+      locdir_m2(ldc);
       break;
     default:
       fprintf(stderr, "Unimplemented stable move\n");
@@ -1391,6 +1467,33 @@ void locdir_apply(LocDirCube *ldc, enum move move) {
     case b2:
       locdir_z2(ldc);
       locdir_F2(ldc);
+      break;
+    case e:
+      locdir_e(ldc);
+      break;
+    case e_prime:
+      locdir_e_prime(ldc);
+      break;
+    case e2:
+      locdir_e2(ldc);
+      break;
+    case s:
+      locdir_s(ldc);
+      break;
+    case s_prime:
+      locdir_s_prime(ldc);
+      break;
+    case s2:
+      locdir_s2(ldc);
+      break;
+    case m:
+      locdir_m(ldc);
+      break;
+    case m_prime:
+      locdir_m_prime(ldc);
+      break;
+    case m2:
+      locdir_m2(ldc);
       break;
     default:
       fprintf(stderr, "Unimplemented move\n");

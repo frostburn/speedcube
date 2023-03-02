@@ -25,7 +25,11 @@ void create_corner_tablebase() {
   render(&cube);
   populate_nibblebase(&tablebase, &ldc);
   printf("Storing result...\n");
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/corners_scissors.bin", "wb");
+  #else
   fptr = fopen("./tables/corners.bin", "wb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open storage.\n");
     exit(EXIT_FAILURE);
@@ -54,7 +58,11 @@ void create_first_edges_tablebase() {
   render(&cube);
   populate_nibblebase(&tablebase, &ldc);
   printf("Storing result...\n");
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/first_7_edges_scissors.bin", "wb");
+  #else
   fptr = fopen("./tables/first_7_edges.bin", "wb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open storage.\n");
     exit(EXIT_FAILURE);
@@ -83,7 +91,11 @@ void create_last_edges_tablebase() {
   render(&cube);
   populate_nibblebase(&tablebase, &ldc);
   printf("Storing result...\n");
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/last_7_edges_scissors.bin", "wb");
+  #else
   fptr = fopen("./tables/last_7_edges.bin", "wb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open storage.\n");
     exit(EXIT_FAILURE);
@@ -109,7 +121,11 @@ void create_xcross_tablebase() {
   render(&cube);
   populate_nibblebase(&tablebase, &ldc);
   printf("Storing result...\n");
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/xcross_scissors.bin", "wb");
+  #else
   fptr = fopen("./tables/xcross.bin", "wb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open storage.\n");
     exit(EXIT_FAILURE);
@@ -132,7 +148,11 @@ void create_edge_sphere() {
   render(&cube);
   sphere = init_goalsphere(&ldc, 6, &locdir_edge_index);
   printf("Storing result...\n");
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/edge_sphere_scissors.bin", "wb");
+  #else
   fptr = fopen("./tables/edge_sphere.bin", "wb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open storage.\n");
     exit(EXIT_FAILURE);
@@ -141,6 +161,15 @@ void create_edge_sphere() {
     printf("Depth %zu has %zu unique configurations.\n", i, sphere.set_sizes[i]);
     fwrite(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
   }
+  // #if SCISSORS_ENABLED
+  // Depth 0 has 1 unique configurations.
+  // Depth 1 has 33 unique configurations.
+  // Depth 2 has 735 unique configurations.
+  // Depth 3 has 16059 unique configurations.
+  // Depth 4 has 327692 unique configurations.
+  // Depth 5 has 6093513 unique configurations.
+  // Depth 6 has 107477715 unique configurations.
+  // #else
   // Depth 0 has 1 unique configurations.
   // Depth 1 has 27 unique configurations.
   // Depth 2 has 501 unique configurations.
@@ -164,7 +193,11 @@ void create_3x3x3_sphere() {
   render(&cube);
   sphere = init_goalsphere(&ldc, 6, &locdir_centerless_hash);
   printf("Storing result...\n");
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/centerless_sphere_scissors.bin", "wb");
+  #else
   fptr = fopen("./tables/centerless_sphere.bin", "wb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open storage.\n");
     exit(EXIT_FAILURE);
@@ -173,6 +206,15 @@ void create_3x3x3_sphere() {
     printf("Depth %zu has %zu unique configurations.\n", i, sphere.set_sizes[i]);
     fwrite(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
   }
+  // #if SCISSORS_ENABLED
+  // Depth 0 has 1 unique configurations.
+  // Depth 1 has 33 unique configurations.
+  // Depth 2 has 735 unique configurations.
+  // Depth 3 has 16183 unique configurations.
+  // Depth 4 has 348926 unique configurations.
+  // Depth 5 has 7268624 unique configurations.
+  // Depth 6 has 148062628 unique configurations.
+  // #else
   // Depth 0 has 1 unique configurations.
   // Depth 1 has 27 unique configurations.
   // Depth 2 has 501 unique configurations.
@@ -197,7 +239,11 @@ void create_oll_sphere() {
   render(&cube);
   sphere = init_goalsphere(&ldc, 6, &locdir_oll_index);
   printf("Storing result...\n");
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/oll_sphere_scissors.bin", "wb");
+  #else
   fptr = fopen("./tables/oll_sphere.bin", "wb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open storage.\n");
     exit(EXIT_FAILURE);
@@ -218,6 +264,9 @@ void create_oll_sphere() {
 }
 
 int main() {
+  #if SCISSORS_ENABLED
+  printf("Scissor moves enabled.\n");
+  #endif
   create_corner_tablebase();
   printf("Corners done.\n");
   printf("\n");
@@ -234,7 +283,7 @@ int main() {
 
   // create_oll_sphere();
 
-  create_xcross_tablebase();
+  // create_xcross_tablebase();
 
   return EXIT_SUCCESS;
 }

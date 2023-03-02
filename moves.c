@@ -1,4 +1,10 @@
+#define SCISSORS_ENABLED 1
+
+#if SCISSORS_ENABLED
+#define NUM_MOVES (55)
+#else
 #define NUM_MOVES (46)
+#endif
 
 // In priority order
 enum move {
@@ -33,10 +39,20 @@ enum move {
   E, E2, E_prime,
 
   S, S_prime, S2,
-  b, b_prime, b2
+  b, b_prime, b2,
+
+  e, e_prime,
+  s, s_prime,
+  m, m_prime,
+
+  e2, s2, m2,
 };
 
+#if SCISSORS_ENABLED
+const enum move MAX_MOVE = m2;
+#else
 const enum move MAX_MOVE = b2;
+#endif
 
 /* Bitboard masks */
 const bitboard U_BODY = 7 | (7 << 9) | (7 << 18);
@@ -532,6 +548,45 @@ void slice_S2(Cube *cube) {
   rotate_x(cube);
 }
 
+void scissors_e(Cube *cube) {
+  turn_U(cube);
+  turn_D(cube);
+}
+void scissors_e_prime(Cube *cube) {
+  turn_U_prime(cube);
+  turn_D_prime(cube);
+}
+void scissors_e2(Cube *cube) {
+  turn_U2(cube);
+  turn_D2(cube);
+}
+
+void scissors_s(Cube *cube) {
+  turn_F(cube);
+  turn_B(cube);
+}
+void scissors_s_prime(Cube *cube) {
+  turn_F_prime(cube);
+  turn_B_prime(cube);
+}
+void scissors_s2(Cube *cube) {
+  turn_F2(cube);
+  turn_B2(cube);
+}
+
+void scissors_m(Cube *cube) {
+  turn_R(cube);
+  turn_L(cube);
+}
+void scissors_m_prime(Cube *cube) {
+  turn_R_prime(cube);
+  turn_L_prime(cube);
+}
+void scissors_m2(Cube *cube) {
+  turn_R2(cube);
+  turn_L2(cube);
+}
+
 void apply(Cube *cube, enum move move) {
   switch (move) {
     case I:
@@ -670,6 +725,33 @@ void apply(Cube *cube, enum move move) {
       break;
     case S2:
       slice_S2(cube);
+      break;
+    case m:
+      scissors_m(cube);
+      break;
+    case m_prime:
+      scissors_m_prime(cube);
+      break;
+    case m2:
+      scissors_m2(cube);
+      break;
+    case e:
+      scissors_e(cube);
+      break;
+    case e_prime:
+      scissors_e_prime(cube);
+      break;
+    case e2:
+      scissors_e2(cube);
+      break;
+    case s:
+      scissors_s(cube);
+      break;
+    case s_prime:
+      scissors_s_prime(cube);
+      break;
+    case s2:
+      scissors_s2(cube);
       break;
     default:
       fprintf(stderr, "Unimplemented move\n");

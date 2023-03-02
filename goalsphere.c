@@ -141,9 +141,9 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
     LocDirCube children[NUM_MOVES - 1];
     bool best[NUM_MOVES - 1];
     size_t i = 0;
-    for (enum move m = U; m <= MAX_MOVE; ++m) {
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
       children[i] = path[path_length - 1];
-      locdir_apply(children + i, m);
+      locdir_apply(children + i, move);
       bool in_path = false;
       for (size_t j = 0; j < path_length; ++j) {
         if (locdir_equals(children + i, path + j)) {
@@ -172,9 +172,9 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
     sequence solution = INVALID;
     if (best_depth == 0) {
       i = 0;
-      for (enum move m = U; m <= MAX_MOVE; ++m) {
-        if (best[i] && (*better)(m, solution)) {
-          solution = m;
+      for (enum move move = U; move <= MAX_MOVE; ++move) {
+        if (best[i] && (*better)(move, solution)) {
+          solution = move;
         }
         i++;
       }
@@ -189,10 +189,10 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
       search_depth_--;
     }
     i = 0;
-    for (enum move m = U; m <= MAX_MOVE; ++m) {
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
       if (best[i]) {
         path[path_length++] = children[i];
-        sequence candidate = concat(m, solve(search_depth_));
+        sequence candidate = concat(move, solve(search_depth_));
         path_length--;
         if ((*better)(candidate, solution)) {
           solution = candidate;
@@ -228,9 +228,9 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
     LocDirCube aligned;
     bool best[NUM_MOVES - 1];
     size_t i = 0;
-    for (enum move m = U; m <= MAX_MOVE; ++m) {
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
       children[i] = path[path_length - 1];
-      locdir_apply(children + i, m);
+      locdir_apply(children + i, move);
       bool in_path = false;
       for (size_t j = 0; j < path_length; ++j) {
         if (locdir_equals(children + i, path + j)) {
@@ -266,9 +266,9 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
       sequence *result = malloc((num_solutions + 1) * sizeof(sequence));
       num_solutions = 0;
       i = 0;
-      for (enum move m = U; m <= MAX_MOVE; ++m) {
+      for (enum move move = U; move <= MAX_MOVE; ++move) {
         if (best[i]) {
-          result[num_solutions++] = m;
+          result[num_solutions++] = move;
         }
         i++;
       }
@@ -293,7 +293,7 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
     num_best = 0;
     size_t num_solutions = 0;
     i = 0;
-    for (enum move m = U; m <= MAX_MOVE; ++m) {
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
       if (best[i]) {
         path[path_length++] = children[i];
         child_results[num_best] = solve(search_depth_);
@@ -312,7 +312,7 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
           if (solution == SENTINEL) {
             break;
           }
-          child_results[num_best][j++] = concat(m, solution);
+          child_results[num_best][j++] = concat(move, solution);
           num_solutions++;
         }
         num_best++;

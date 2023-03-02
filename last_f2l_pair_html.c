@@ -67,7 +67,11 @@ int main() {
 
   printf("<html>\n");
   printf("<head>\n");
+  #if SCISSORS_ENABLED
+  printf("<title>Shortest F2L algorithms (last pair, scissor turn metric)</title>\n");
+  #else
   printf("<title>Shortest F2L algorithms (last pair, slice turn metric)</title>\n");
+  #endif
   printf("<style>\n");
   printf("table, th, td {border: 1px solid;}\n");
   printf("td {text-align:center; padding:0.5em;}\n");
@@ -84,6 +88,9 @@ int main() {
   printf("<span style=\"color:blue\">Blue</span> face is <b>B</b>ack.<br>");
   printf("<span style=\"color:red\">Red</span> face is <b>L</b>eft.<br>");
   printf("White face is <b>D</b>own.</p>");
+  #if SCISSORS_ENABLED
+  printf("<p>Scissor moves are defined as follows and can in principle be performed in one single motion:<br>m = R L<br>e = U D<br>s = F B</p>");
+  #endif
 
   for (int l = 2; l <= max_length; ++l) {
     int length = l;

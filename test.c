@@ -199,11 +199,11 @@ void test_locdir() {
     }
   }
 
-  for (enum move m = I; m <= MAX_MOVE; ++m) {
+  for (enum move move = I; move <= MAX_MOVE; ++move) {
     locdir_reset(&ldc);
     cube = to_cube(&ldc);
-    locdir_apply(&ldc, m);
-    apply(&cube, m);
+    locdir_apply(&ldc, move);
+    apply(&cube, move);
     clone = to_cube(&ldc);
     assert(equals(&cube, &clone));
   }
@@ -230,7 +230,11 @@ void test_locdir() {
     }
   }
 
+  #if SCISSORS_ENABLED
+  assert(num_unique == 26);
+  #else
   assert(num_unique == 22);
+  #endif
 
   printf("All locdir tests pass!\n");
 }
@@ -366,9 +370,9 @@ int main() {
     sequence seq = 0;
     int length = 1 + (rand() % SEQUENCE_MAX_LENGTH);
     for (int j = 0; j < length; ++j) {
-      enum move m = rand() % NUM_MOVES;
-      apply(&reference, m);
-      seq = NUM_MOVES * seq + m;
+      enum move move = rand() % NUM_MOVES;
+      apply(&reference, move);
+      seq = NUM_MOVES * seq + move;
     }
 
     cube = test_cube();

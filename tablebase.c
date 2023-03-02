@@ -110,9 +110,9 @@ sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc, bool (*better)(seq
     LocDirCube children[NUM_MOVES - 1];
     bool best[NUM_MOVES - 1];
     size_t i = 0;
-    for (enum move m = U; m <= MAX_MOVE; ++m) {
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
       children[i] = *parent;
-      locdir_apply(children + i, m);
+      locdir_apply(children + i, move);
       aligned = children[i];
       locdir_realign(&aligned);
       size_t index = (*tablebase->index_func)(&aligned);
@@ -130,9 +130,9 @@ sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc, bool (*better)(seq
     sequence solution = INVALID;
     if (best_depth == 0) {
       i = 0;
-      for (enum move m = U; m <= MAX_MOVE; ++m) {
-        if (best[i] && (*better)(m, solution)) {
-          solution = m;
+      for (enum move move = U; move <= MAX_MOVE; ++move) {
+        if (best[i] && (*better)(move, solution)) {
+          solution = move;
         }
         i++;
       }
@@ -144,9 +144,9 @@ sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc, bool (*better)(seq
     }
 
     i = 0;
-    for (enum move m = U; m <= MAX_MOVE; ++m) {
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
       if (best[i]) {
-        sequence candidate = concat(m, solve(children + i));
+        sequence candidate = concat(move, solve(children + i));
         if ((*better)(candidate, solution)) {
           solution = candidate;
         }

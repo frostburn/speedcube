@@ -61,7 +61,11 @@ void prepare_global_solver() {
 
   fprintf(stderr, "Loading tablebase for first 7 edges.\n");
   GLOBAL_SOLVER.first = init_nibblebase(LOCDIR_FIRST_7_EDGE_INDEX_SPACE, &locdir_first_7_edge_index);
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/first_7_edges_scissors.bin", "rb");
+  #else
   fptr = fopen("./tables/first_7_edges.bin", "rb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
@@ -76,7 +80,11 @@ void prepare_global_solver() {
 
   fprintf(stderr ,"Loading tablebase for last 7 edges.\n");
   GLOBAL_SOLVER.last = init_nibblebase(LOCDIR_LAST_7_EDGE_INDEX_SPACE, &locdir_last_7_edge_index);
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/last_7_edges_scissors.bin", "rb");
+  #else
   fptr = fopen("./tables/last_7_edges.bin", "rb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
@@ -91,7 +99,11 @@ void prepare_global_solver() {
 
   fprintf(stderr, "Loading tablebase for the corners.\n");
   GLOBAL_SOLVER.corners = init_nibblebase(LOCDIR_CORNER_INDEX_SPACE, &locdir_corner_index);
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/corners_scissors.bin", "rb");
+  #else
   fptr = fopen("./tables/corners.bin", "rb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
@@ -110,6 +122,15 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.goal.sets = malloc(GLOBAL_SOLVER.goal.num_sets * sizeof(size_t*));
   GLOBAL_SOLVER.goal.set_sizes = malloc(GLOBAL_SOLVER.goal.num_sets * sizeof(size_t));
   GLOBAL_SOLVER.goal.set_sizes[0] = 1;
+  #if SCISSORS_ENABLED
+  GLOBAL_SOLVER.goal.set_sizes[1] = 33;
+  GLOBAL_SOLVER.goal.set_sizes[2] = 735;
+  GLOBAL_SOLVER.goal.set_sizes[3] = 16183;
+  GLOBAL_SOLVER.goal.set_sizes[4] = 348926;
+  GLOBAL_SOLVER.goal.set_sizes[5] = 7268624;
+  GLOBAL_SOLVER.goal.set_sizes[6] = 148062628;
+  fptr = fopen("./tables/centerless_sphere_scissors.bin", "rb");
+  #else
   GLOBAL_SOLVER.goal.set_sizes[1] = 27;
   GLOBAL_SOLVER.goal.set_sizes[2] = 501;
   GLOBAL_SOLVER.goal.set_sizes[3] = 9175;
@@ -117,6 +138,7 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.goal.set_sizes[5] = 2912447;
   GLOBAL_SOLVER.goal.set_sizes[6] = 50839041;
   fptr = fopen("./tables/centerless_sphere.bin", "rb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
@@ -137,6 +159,15 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.edge_goal.sets = malloc(GLOBAL_SOLVER.edge_goal.num_sets * sizeof(size_t*));
   GLOBAL_SOLVER.edge_goal.set_sizes = malloc(GLOBAL_SOLVER.edge_goal.num_sets * sizeof(size_t));
   GLOBAL_SOLVER.edge_goal.set_sizes[0] = 1;
+  #if SCISSORS_ENABLED
+  GLOBAL_SOLVER.edge_goal.set_sizes[1] = 33;
+  GLOBAL_SOLVER.edge_goal.set_sizes[2] = 735;
+  GLOBAL_SOLVER.edge_goal.set_sizes[3] = 16059;
+  GLOBAL_SOLVER.edge_goal.set_sizes[4] = 327692;
+  GLOBAL_SOLVER.edge_goal.set_sizes[5] = 6093513;
+  GLOBAL_SOLVER.edge_goal.set_sizes[6] = 107477715;
+  fptr = fopen("./tables/edge_sphere_scissors.bin", "rb");
+  #else
   GLOBAL_SOLVER.edge_goal.set_sizes[1] = 27;
   GLOBAL_SOLVER.edge_goal.set_sizes[2] = 501;
   GLOBAL_SOLVER.edge_goal.set_sizes[3] = 9121;
@@ -144,6 +175,7 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.edge_goal.set_sizes[5] = 2612316;
   GLOBAL_SOLVER.edge_goal.set_sizes[6] = 41391832;
   fptr = fopen("./tables/edge_sphere.bin", "rb");
+  #endif
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
