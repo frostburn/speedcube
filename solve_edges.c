@@ -8,8 +8,11 @@
 #include "sequence.c"
 #include "locdir.c"
 #include "tablebase.c"
+#include "hashset.c"
 #include "goalsphere.c"
 #include "ida_star.c"
+
+// TODO: Scissors
 
 int main() {
   srand(time(NULL));
@@ -48,35 +51,46 @@ int main() {
   }
   fclose(fptr);
 
+  LocDirCube edges;
+  locdir_reset_edges(&edges);
+
   printf("Loading database for the last 6 moves of an edges-only cube.\n");
   GoalSphere edge_sphere;
   edge_sphere.hash_func = locdir_edge_index;
-  edge_sphere.num_sets = 6 + 1;
-  edge_sphere.sets = malloc(edge_sphere.num_sets * sizeof(size_t*));
-  edge_sphere.set_sizes = malloc(edge_sphere.num_sets * sizeof(size_t));
-  edge_sphere.set_sizes[0] = 1;
-  edge_sphere.set_sizes[1] = 27;
-  edge_sphere.set_sizes[2] = 501;
-  edge_sphere.set_sizes[3] = 9121;
-  edge_sphere.set_sizes[4] = 157886;
-  edge_sphere.set_sizes[5] = 2612316;
-  edge_sphere.set_sizes[6] = 41391832;
+  edge_sphere.goal_hash = locdir_edge_index(&edges);
+  edge_sphere.num_sets = 6;
+  edge_sphere.sets = malloc(edge_sphere.num_sets * sizeof(HashSet));
+  edge_sphere.sets[0].magnitude = 5;
+  edge_sphere.sets[0].num_elements = 27;
+  edge_sphere.sets[1].magnitude = 10;
+  edge_sphere.sets[1].num_elements = 501;
+  edge_sphere.sets[2].magnitude = 14;
+  edge_sphere.sets[2].num_elements = 9121;
+  edge_sphere.sets[3].magnitude = 18;
+  edge_sphere.sets[3].num_elements = 157886;
+  edge_sphere.sets[4].magnitude = 22;
+  edge_sphere.sets[4].num_elements = 2612316;
+  edge_sphere.sets[5].magnitude = 26;
+  edge_sphere.sets[5].num_elements = 41391832;
   fptr = fopen("./tables/edge_sphere.bin", "rb");
   if (fptr == NULL) {
     fprintf(stderr, "Failed to open file.\n");
     exit(EXIT_FAILURE);
   }
   for (size_t i = 0; i < edge_sphere.num_sets; ++i) {
-    edge_sphere.sets[i] = malloc(edge_sphere.set_sizes[i] * sizeof(size_t));
-    num_read = fread(edge_sphere.sets[i], sizeof(size_t), edge_sphere.set_sizes[i], fptr);
-    if (num_read != edge_sphere.set_sizes[i]) {
-      fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, edge_sphere.set_sizes[i]);
+    size_t size = 1 << edge_sphere.sets[i].magnitude;
+    edge_sphere.sets[i].mask = size - 1;
+    edge_sphere.sets[i].empty_value = edge_sphere.goal_hash;
+    edge_sphere.sets[i].elements = malloc(size * sizeof(size_t));
+    num_read = fread(edge_sphere.sets[i].elements, sizeof(size_t), size, fptr);
+    if (num_read != size) {
+      fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, size);
       exit(EXIT_FAILURE);
     }
   }
   fclose(fptr);
 
-  unsigned char sphere_depth = edge_sphere.num_sets - 1;
+  unsigned char sphere_depth = edge_sphere.num_sets;
 
   unsigned char estimator(LocDirCube *ldc) {
     unsigned char depth = get_nibble(&first, (*first.index_func)(ldc));
@@ -101,8 +115,6 @@ int main() {
   ida.is_solved = is_solved;
 
   Cube cube;
-  LocDirCube edges;
-  locdir_reset_edges(&edges);
   for (char i = 0; i < 6; ++i) {
     edges.center_locs[i] = i;
   }
@@ -120,13 +132,13 @@ int main() {
       continue;
     }
 
-    ida_star_solve(&ida, &edges);
+    ida_star_solve(&ida, &edges, 0);
 
     printf("Found a solution in %zu moves:\n", ida.path_length - 1 + sphere_depth);
 
     sequence first_steps = ida_to_sequence(&ida);
     locdir_apply_sequence(&edges, first_steps);
-    sequence final_steps = goalsphere_solve(&edge_sphere, &edges, 0);
+    sequence final_steps = goalsphere_solve(&edge_sphere, &edges, 0, &is_better);
     locdir_apply_sequence(&edges, final_steps);
     print_sequence(concat(first_steps, final_steps));
     cube = to_cube(&edges);
@@ -150,7 +162,7 @@ int main() {
       continue;
     }
 
-    ida_star_solve(&ida, &edges);
+    ida_star_solve(&ida, &edges, 0);
     size_t num_moves = ida.path_length - 1;
     total_moves += num_moves;
     if (num_moves < min_moves) {

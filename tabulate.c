@@ -8,6 +8,7 @@
 #include "sequence.c"
 #include "locdir.c"
 #include "tablebase.c"
+#include "hashset.c"
 #include "goalsphere.c"
 
 void create_corner_tablebase() {
@@ -158,8 +159,9 @@ void create_edge_sphere() {
     exit(EXIT_FAILURE);
   }
   for (size_t i = 0; i < sphere.num_sets; ++i) {
-    printf("Depth %zu has %zu unique configurations.\n", i, sphere.set_sizes[i]);
-    fwrite(sphere.sets[i], sizeof(size_t), sphere.set_sizes[i], fptr);
+    printf("Set #%zu has magnitude %d (%zu unique configurations).\n", i, sphere.sets[i].magnitude, sphere.sets[i].num_elements);
+    size_t size = 1ULL << sphere.sets[i].magnitude;
+    fwrite(sphere.sets[i].elements, sizeof(size_t), size, fptr);
   }
   // #if SCISSORS_ENABLED
   // Depth 0 has 1 unique configurations.
@@ -181,6 +183,7 @@ void create_edge_sphere() {
   free_goalsphere(&sphere);
 }
 
+/*
 void create_3x3x3_sphere() {
   Cube cube;
   LocDirCube ldc;
@@ -262,22 +265,25 @@ void create_oll_sphere() {
   fclose(fptr);
   free_goalsphere(&sphere);
 }
+*/
 
 int main() {
   #if SCISSORS_ENABLED
   printf("Scissor moves enabled.\n");
   #endif
 
+  /*
   create_xcross_tablebase();
 
   create_corner_tablebase();
 
   create_first_edges_tablebase();
   create_last_edges_tablebase();
+  */
 
   create_edge_sphere();
 
-  create_3x3x3_sphere();
+  // create_3x3x3_sphere();
 
   // create_oll_sphere();
 

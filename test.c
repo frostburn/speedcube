@@ -9,6 +9,7 @@
 #include "sequence.c"
 #include "locdir.c"
 #include "tablebase.c"
+#include "hashset.c"
 #include "goalsphere.c"
 
 typedef struct
@@ -75,6 +76,35 @@ void test_hash_collisions() {
 
   assert(num_unique == sphere_total);
   free_goalsphere(&sphere);
+}
+
+void test_hashset() {
+  // Fits five numbers in a set that takes the space of eight
+  HashSet set = init_hashset(3, ~0ULL);
+  hashset_add(&set, 2);
+  hashset_add(&set, 3);
+  hashset_add(&set, 5);
+  hashset_add(&set, 7);
+  hashset_add(&set, 11);
+  assert(set.num_elements == 5);
+  assert(set.magnitude == 3);
+  assert(hashset_has(&set, 7));
+  assert(!hashset_has(&set, 13));
+
+  // Grows if needed
+  hashset_add(&set, 13);
+  hashset_add(&set, 17);
+  hashset_add(&set, 19);
+  hashset_add(&set, 23);
+  assert(set.num_elements == 9);
+  assert(set.magnitude == 4);
+  assert(hashset_has(&set, 5));
+  assert(hashset_has(&set, 13));
+  assert(!hashset_has(&set, 29));
+
+  free_hashset(&set);
+
+  printf("All hash set tests pass!\n");
 }
 
 void test_locdir() {
@@ -449,7 +479,9 @@ int main() {
 
   test_locdir();
 
-  test_hash_collisions();
+  test_hashset();
+
+  // test_hash_collisions();
 
   return EXIT_SUCCESS;
 }

@@ -1,4 +1,12 @@
 typedef struct {
+  HashSet *sets;
+  size_t num_sets;
+  size_t goal_hash;
+  size_t (*hash_func)(LocDirCube*);
+} GoalSphere;
+
+/*
+typedef struct {
   size_t **sets;
   size_t *set_sizes;
   size_t num_sets;
@@ -64,11 +72,15 @@ size_t set_index(size_t *set, size_t size, size_t hash) {
   }
   return halfway + 1 + right_index;
 }
+*/
 
 unsigned char goalsphere_depth_(GoalSphere *sphere, size_t hash) {
+  if (hash == sphere->goal_hash) {
+    return 0;
+  }
   for (unsigned char depth = 0; depth < sphere->num_sets; ++depth) {
-    if (set_has(sphere->sets[depth], sphere->set_sizes[depth], hash)) {
-      return depth;
+    if (hashset_has(sphere->sets + depth, hash)) {
+      return depth + 1;
     }
   }
   return UNKNOWN;
@@ -76,7 +88,7 @@ unsigned char goalsphere_depth_(GoalSphere *sphere, size_t hash) {
 
 bool goalsphere_shell(GoalSphere *sphere, LocDirCube *ldc) {
   size_t last = sphere->num_sets - 1;
-  return set_has(sphere->sets[last], sphere->set_sizes[last], (*sphere->hash_func)(ldc));
+  return hashset_has(sphere->sets + last, (*sphere->hash_func)(ldc));
 }
 
 unsigned char goalsphere_depth(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
@@ -129,7 +141,7 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
   }
   LocDirCube aligned = *ldc;
   locdir_realign(&aligned);
-  if (sphere->sets[0][0] == sphere->hash_func(&aligned)) {
+  if (hashset_has(sphere->sets, sphere->hash_func(&aligned))) {
     return I;
   }
   LocDirCube path[SEQUENCE_MAX_LENGTH];
@@ -214,7 +226,7 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
   }
   LocDirCube aligned = *ldc;
   locdir_realign(&aligned);
-  if (sphere->sets[0][0] == sphere->hash_func(&aligned)) {
+  if (hashset_has(sphere->sets, sphere->hash_func(&aligned))) {
     sequence *result = malloc(2 * sizeof(sequence));
     result[0] = I;
     result[1] = SENTINEL;
@@ -346,60 +358,36 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
 }
 
 
-void update_goalsphere(GoalSphere *sphere, LocDirCube *ldc, size_t depth, size_t max_depth, bool *boundary) {
+void update_goalsphere(GoalSphere *sphere, LocDirCube *ldc, size_t depth, size_t max_depth) {
   size_t hash = (*sphere->hash_func)(ldc);
-  if (depth == max_depth - 1) {
-    size_t set_size = sphere->set_sizes[sphere->num_sets - 1];
-    size_t boundary_index = set_index(sphere->sets[sphere->num_sets - 1], set_size, hash);
-    if (boundary_index == OUTSIDE) {
-      return;
+  if (depth >= max_depth) {
+    if (goalsphere_depth_(sphere, hash) == UNKNOWN) {
+      hashset_add(sphere->sets + sphere->num_sets, hash);
     }
-    if (boundary[boundary_index]) {
-      return;
-    }
-    boundary[boundary_index] = true;
-  } else if (depth >= max_depth) {
-    sphere->sets[sphere->num_sets][sphere->set_sizes[sphere->num_sets]] = hash;
-    sphere->set_sizes[sphere->num_sets]++;
     return;
   }
   for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
     LocDirCube child = *ldc;
     locdir_apply_stable(&child, STABLE_MOVES[i]);
-    update_goalsphere(sphere, &child, depth + 1, max_depth, boundary);
+    update_goalsphere(sphere, &child, depth + 1, max_depth);
   }
 }
 
 GoalSphere init_goalsphere(LocDirCube *goal, size_t max_depth, size_t (*hash_func)(LocDirCube*)) {
   GoalSphere sphere;
-  sphere.sets = malloc((max_depth + 1) * sizeof(size_t*));
-  sphere.set_sizes = malloc((max_depth + 1) * sizeof(size_t));
+  sphere.sets = malloc(max_depth * sizeof(HashSet));
   sphere.num_sets = 0;
   sphere.hash_func = hash_func;
 
-  sphere.sets[0] = malloc(sizeof(size_t));
-  sphere.sets[0][0] = hash_func(goal);
-  sphere.set_sizes[0] = 1;
-  sphere.num_sets++;
+  sphere.goal_hash = hash_func(goal);
 
-  for (size_t depth = 1; depth <= max_depth; ++depth) {
-    bool *boundary = calloc(sphere.set_sizes[depth - 1], sizeof(bool));
-
-    sphere.sets[depth] = malloc(sphere.set_sizes[depth - 1] * NUM_STABLE_MOVES * sizeof(size_t));
-    sphere.set_sizes[depth] = 0;
-    update_goalsphere(&sphere, goal, 0, depth, boundary);
-    free(boundary);
-    qsort(sphere.sets[depth], sphere.set_sizes[depth], sizeof(size_t), cmp_size_t);
-    size_t num_unique = 0;
-    for (size_t i = 0; i < sphere.set_sizes[depth]; ++i) {
-      size_t hash = sphere.sets[depth][i];
-      size_t previous = (i > 0) ? sphere.sets[depth][i-1] : ~hash;
-      if (hash != previous && goalsphere_depth_(&sphere, hash) == UNKNOWN) {
-        sphere.sets[depth][num_unique++] = hash;
-      }
+  while (sphere.num_sets < max_depth) {
+    int magnitude = 5;
+    if (sphere.num_sets > 0) {
+      magnitude = sphere.sets[sphere.num_sets - 1].magnitude + 3;
     }
-    sphere.sets[depth] = realloc(sphere.sets[depth], num_unique * sizeof(size_t));
-    sphere.set_sizes[depth] = num_unique;
+    sphere.sets[sphere.num_sets] = init_hashset(magnitude, sphere.goal_hash);
+    update_goalsphere(&sphere, goal, 0, sphere.num_sets + 1);
     sphere.num_sets++;
   }
 
@@ -408,8 +396,7 @@ GoalSphere init_goalsphere(LocDirCube *goal, size_t max_depth, size_t (*hash_fun
 
 void free_goalsphere(GoalSphere *sphere) {
   for (size_t i = 0; i < sphere->num_sets; ++i) {
-    free(sphere->sets[i]);
+    free_hashset(sphere->sets + i);
   }
   free(sphere->sets);
-  free(sphere->set_sizes);
 }
