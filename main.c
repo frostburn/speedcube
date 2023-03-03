@@ -325,7 +325,7 @@ void cross_trainer() {
     while (getchar() != '\n');
     locdir_reset(&ldc);
     locdir_apply_sequence(&ldc, s);
-    sequence solution = nibble_solve(&tablebase, &ldc, &is_better);
+    sequence solution = nibble_solve(&tablebase, &ldc, &is_better_semistable);
     print_sequence(solution);
     printf("\n");
   }
@@ -374,7 +374,7 @@ void xcross_trainer() {
     while (getchar() != '\n');
     locdir_reset(&ldc);
     locdir_apply_sequence(&ldc, s);
-    sequence solution = nibble_solve(&tablebase, &ldc, &is_better);
+    sequence solution = nibble_solve(&tablebase, &ldc, &is_better_semistable);
     print_sequence(solution);
     printf("\n");
   }

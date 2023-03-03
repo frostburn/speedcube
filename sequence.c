@@ -228,6 +228,141 @@ void apply_sequence(Cube *cube, sequence seq) {
   }
 }
 
+const char* move_to_string(enum move move) {
+  switch(move) {
+    case U:
+      return "U";
+    case U_prime:
+      return "U'";
+    case U2:
+      return "U2";
+    case D:
+      return "D";
+    case D_prime:
+      return "D'";
+    case D2:
+      return "D2";
+    case R:
+      return "R";
+    case R_prime:
+      return "R'";
+    case R2:
+      return "R2";
+    case L:
+      return "L";
+    case L_prime:
+      return "L'";
+    case L2:
+      return "L2";
+    case F:
+      return "F";
+    case F_prime:
+      return "F'";
+    case F2:
+      return "F2";
+    case B:
+      return "B";
+    case B_prime:
+      return "B'";
+    case B2:
+      return "B2";
+    case u:
+      return "u";
+    case u_prime:
+      return "u'";
+    case u2:
+      return "u2";
+    case d:
+      return "d";
+    case d_prime:
+      return "d'";
+    case d2:
+      return "d2";
+    case r:
+      return "r";
+    case r_prime:
+      return "r'";
+    case r2:
+      return "r2";
+    case l:
+      return "l";
+    case l_prime:
+      return "l'";
+    case l2:
+      return "l2";
+    case f:
+      return "f";
+    case f_prime:
+      return "f'";
+    case f2:
+      return "f2";
+    case b:
+      return "b";
+    case b_prime:
+      return "b'";
+    case b2:
+      return "b2";
+    case M:
+      return "M";
+    case M_prime:
+      return "M'";
+    case M2:
+      return "M2";
+    case E:
+      return "E";
+    case E_prime:
+      return "E'";
+    case E2:
+      return "E2";
+    case S:
+      return "S";
+    case S_prime:
+      return "S'";
+    case S2:
+      return "S2";
+    case UD:
+      return "[UD]";
+    case UpDp:
+      return "[U'D']";
+    case U2D:
+      return "[U2D]";
+    case U2Dp:
+      return "[U2D']";
+    case D2U:
+      return "[D2U]";
+    case D2Up:
+      return "[D2U']";
+    case FB:
+      return "[FB]";
+    case FpBp:
+      return "[F'B']";
+    case F2B:
+      return "[F2B]";
+    case F2Bp:
+      return "[F2B']";
+    case B2F:
+      return "[B2F]";
+    case B2Fp:
+      return "[B2F']";
+    case RL:
+      return "[RL]";
+    case RpLp:
+      return "[R'L']";
+    case R2L:
+      return "[R2L]";
+    case R2Lp:
+      return "[R2L']";
+    case L2R:
+      return "[L2R]";
+    case L2Rp:
+      return "[L2R']";
+    case I:
+      return "";
+    default:
+      return "?";
+  }
+}
+
 void fprint_sequence(FILE *file, sequence seq) {
   if (seq == INVALID) {
     fprintf(file, "<DNF>");
@@ -240,201 +375,9 @@ void fprint_sequence(FILE *file, sequence seq) {
   }
   seq = reversed;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
-    switch (seq % NUM_MOVES) {
-      case U:
-        fprintf(file, "U ");
-        break;
-      case U_prime:
-        fprintf(file, "U' ");
-        break;
-      case U2:
-        fprintf(file, "U2 ");
-        break;
-      case D:
-        fprintf(file, "D ");
-        break;
-      case D_prime:
-        fprintf(file, "D' ");
-        break;
-      case D2:
-        fprintf(file, "D2 ");
-        break;
-      case R:
-        fprintf(file, "R ");
-        break;
-      case R_prime:
-        fprintf(file, "R' ");
-        break;
-      case R2:
-        fprintf(file, "R2 ");
-        break;
-      case L:
-        fprintf(file, "L ");
-        break;
-      case L_prime:
-        fprintf(file, "L' ");
-        break;
-      case L2:
-        fprintf(file, "L2 ");
-        break;
-      case F:
-        fprintf(file, "F ");
-        break;
-      case F_prime:
-        fprintf(file, "F' ");
-        break;
-      case F2:
-        fprintf(file, "F2 ");
-        break;
-      case B:
-        fprintf(file, "B ");
-        break;
-      case B_prime:
-        fprintf(file, "B' ");
-        break;
-      case B2:
-        fprintf(file, "B2 ");
-        break;
-      case u:
-        fprintf(file, "u ");
-        break;
-      case u_prime:
-        fprintf(file, "u' ");
-        break;
-      case u2:
-        fprintf(file, "u2 ");
-        break;
-      case d:
-        fprintf(file, "d ");
-        break;
-      case d_prime:
-        fprintf(file, "d' ");
-        break;
-      case d2:
-        fprintf(file, "d2 ");
-        break;
-      case r:
-        fprintf(file, "r ");
-        break;
-      case r_prime:
-        fprintf(file, "r' ");
-        break;
-      case r2:
-        fprintf(file, "r2 ");
-        break;
-      case l:
-        fprintf(file, "l ");
-        break;
-      case l_prime:
-        fprintf(file, "l' ");
-        break;
-      case l2:
-        fprintf(file, "l2 ");
-        break;
-      case f:
-        fprintf(file, "f ");
-        break;
-      case f_prime:
-        fprintf(file, "f' ");
-        break;
-      case f2:
-        fprintf(file, "f2 ");
-        break;
-      case b:
-        fprintf(file, "b ");
-        break;
-      case b_prime:
-        fprintf(file, "b' ");
-        break;
-      case b2:
-        fprintf(file, "b2 ");
-        break;
-      case M:
-        fprintf(file, "M ");
-        break;
-      case M_prime:
-        fprintf(file, "M' ");
-        break;
-      case M2:
-        fprintf(file, "M2 ");
-        break;
-      case E:
-        fprintf(file, "E ");
-        break;
-      case E_prime:
-        fprintf(file, "E' ");
-        break;
-      case E2:
-        fprintf(file, "E2 ");
-        break;
-      case S:
-        fprintf(file, "S ");
-        break;
-      case S_prime:
-        fprintf(file, "S' ");
-        break;
-      case S2:
-        fprintf(file, "S2 ");
-        break;
-      case UD:
-        fprintf(file, "[UD] ");
-        break;
-      case UpDp:
-        fprintf(file, "[U'D'] ");
-        break;
-      case U2D:
-        fprintf(file, "[U2D] ");
-        break;
-      case U2Dp:
-        fprintf(file, "[U2D'] ");
-        break;
-      case D2U:
-        fprintf(file, "[D2U] ");
-        break;
-      case D2Up:
-        fprintf(file, "[D2U'] ");
-        break;
-      case FB:
-        fprintf(file, "[FB] ");
-        break;
-      case FpBp:
-        fprintf(file, "[F'B'] ");
-        break;
-      case F2B:
-        fprintf(file, "[F2B] ");
-        break;
-      case F2Bp:
-        fprintf(file, "[F2B'] ");
-        break;
-      case B2F:
-        fprintf(file, "[B2F] ");
-        break;
-      case B2Fp:
-        fprintf(file, "[B2F'] ");
-        break;
-      case RL:
-        fprintf(file, "[RL] ");
-        break;
-      case RpLp:
-        fprintf(file, "[R'L'] ");
-        break;
-      case R2L:
-        fprintf(file, "[R2L] ");
-        break;
-      case R2Lp:
-        fprintf(file, "[R2L'] ");
-        break;
-      case L2R:
-        fprintf(file, "[L2R] ");
-        break;
-      case L2Rp:
-        fprintf(file, "[L2R'] ");
-        break;
-      case I:
-        break;
-      default:
-        fprintf(file, "? ");
-        break;
+    enum move move = seq % NUM_MOVES;
+    if (move) {
+      fprintf(file, "%s ", move_to_string(move));
     }
     seq /= NUM_MOVES;
   }
