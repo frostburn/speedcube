@@ -515,6 +515,355 @@ void cross_stats() {
   printf("Average = %g\n", average);
 }
 
+void xcross_stats() {
+  FILE *fptr;
+  size_t num_read;
+  size_t tablebase_size;
+
+  fprintf(stderr, "Loading tablebase for xcross.\n");
+  Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
+  #if SCISSORS_ENABLED
+  fptr = fopen("./tables/xcross_scissors.bin", "rb");
+  #else
+  fptr = fopen("./tables/xcross.bin", "rb");
+  #endif
+  if (fptr == NULL) {
+    fprintf(stderr, "Failed to open file.\n");
+    exit(EXIT_FAILURE);
+  }
+  tablebase_size = (LOCDIR_XCROSS_INDEX_SPACE + 1)/2;
+  num_read = fread(tablebase.octets, sizeof(unsigned char), tablebase_size, fptr);
+  if (num_read != tablebase_size) {
+    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
+    exit(EXIT_FAILURE);
+  }
+  fclose(fptr);
+
+  LocDirCube ldc;
+
+  size_t depths[10] = {0};
+
+  size_t M = sizeof(depths) / sizeof(size_t);
+
+  size_t N = 100000;
+
+  printf("=== Single ===\n");
+  for (size_t i = 0; i < N; ++i) {
+    locdir_reset(&ldc);
+    locdir_scramble(&ldc);
+
+    unsigned char depth = nibble_depth(&tablebase, &ldc);
+    depths[depth]++;
+  }
+
+  double average = 0;
+  for (size_t i = 0; i < M; ++i) {
+    printf("%zu: ", i);
+    double portion = ((double)depths[i]) / N;
+    for (size_t j = 0; j < portion * 100; ++j) {
+      printf("#");
+    }
+    printf(" %g%%\n", portion * 100);
+    average += i * portion;
+    depths[i] = 0;
+  }
+  printf("Average = %g\n", average);
+
+  printf("\n=== Single (neutral pair) ===\n");
+
+  for (size_t i = 0; i < N; ++i) {
+    int seed = rand();
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_scramble(&ldc);
+    unsigned char depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_y(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y_prime(&ldc);
+    unsigned char alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_y2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y2(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    depths[depth]++;
+  }
+
+  average = 0;
+  for (size_t i = 0; i < M; ++i) {
+    printf("%zu: ", i);
+    double portion = ((double)depths[i]) / N;
+    for (size_t j = 0; j < portion * 100; ++j) {
+      printf("#");
+    }
+    printf(" %g%%\n", portion * 100);
+    average += i * portion;
+    depths[i] = 0;
+  }
+  printf("Average = %g\n", average);
+
+  printf("\n=== True neutral ===\n");
+
+  for (size_t i = 0; i < N; ++i) {
+    // White
+    int seed = rand();
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_scramble(&ldc);
+    unsigned char depth = nibble_depth(&tablebase, &ldc);
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_y(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y_prime(&ldc);
+    unsigned char alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_y2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y2(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    // Green
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_x(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x_prime(&ldc);
+    locdir_y(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_x(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x_prime(&ldc);
+    locdir_y2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y2(&ldc);
+    locdir_x(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x_prime(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y(&ldc);
+    locdir_x(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    // Blue
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x(&ldc);
+    locdir_scramble(&ldc);
+    locdir_x_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x(&ldc);
+    locdir_y(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_x_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x(&ldc);
+    locdir_y2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y2(&ldc);
+    locdir_x_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y(&ldc);
+    locdir_x_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    // Orange
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_z(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z_prime(&ldc);
+    locdir_y(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_z(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z_prime(&ldc);
+    locdir_y2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y2(&ldc);
+    locdir_z(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z_prime(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y(&ldc);
+    locdir_z(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    // Red
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z(&ldc);
+    locdir_scramble(&ldc);
+    locdir_z_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z(&ldc);
+    locdir_y(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_z_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z(&ldc);
+    locdir_y2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y2(&ldc);
+    locdir_z_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_z(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y(&ldc);
+    locdir_z_prime(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    // Yellow
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_x2(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x2(&ldc);
+    locdir_y(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_x2(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x2(&ldc);
+    locdir_y2(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y2(&ldc);
+    locdir_x2(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    srand(seed);
+    locdir_reset(&ldc);
+    locdir_x2(&ldc);
+    locdir_y_prime(&ldc);
+    locdir_scramble(&ldc);
+    locdir_y(&ldc);
+    locdir_x2(&ldc);
+    alt = nibble_depth(&tablebase, &ldc);
+    depth = depth < alt ? depth : alt;
+
+    depths[depth]++;
+  }
+
+  average = 0;
+  for (size_t i = 0; i < M; ++i) {
+    printf("%zu: ", i);
+    double portion = ((double)depths[i]) / N;
+    for (size_t j = 0; j < portion * 100; ++j) {
+      printf("#");
+    }
+    printf(" %g%%\n", portion * 100);
+    average += i * portion;
+    depths[i] = 0;
+  }
+  printf("Average = %g\n", average);
+}
+
 void solve_f2l_pair() {
   FILE *fptr;
   size_t num_read;
@@ -608,9 +957,9 @@ int main() {
 
   // cross_trainer();
 
-  xcross_trainer();
+  // xcross_trainer();
 
-  // cross_stats();
+  xcross_stats();
 
   // solve_f2l_pair();
 
