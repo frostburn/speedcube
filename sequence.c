@@ -1,3 +1,5 @@
+#include "math.h"
+
 typedef unsigned __int128 sequence;
 
 #if SCISSORS_ENABLED
@@ -6,7 +8,7 @@ typedef unsigned __int128 sequence;
 #define SEQUENCE_MAX_LENGTH (23)
 #endif
 
-#define MAX_COMPLEXITY 1
+#define POW_COMPLEXITY 1
 
 const sequence NOTHING = 0;
 const sequence INVALID = ~NOTHING;
@@ -464,9 +466,11 @@ bool is_better(sequence a, sequence b) {
     if (move_a && !move_b) {
       return false;
     }
-    #if MAX_COMPLEXITY
-    score_a = score_a > move_a ? score_a : move_a;
-    score_b = score_b > move_b ? score_b : move_b;
+    #if POW_COMPLEXITY
+    move_a *= move_a;
+    score_a += move_a*move_a;
+    move_b *= move_b;
+    score_b += move_b*move_b;
     #else
     score_a += move_a;
     score_b += move_b;
@@ -489,97 +493,97 @@ bool is_better(sequence a, sequence b) {
 int semistable_score(enum move move) {
   switch(move) {
     case I:
-      return -1;
-    case U:
       return 0;
-    case U_prime:
+    case U:
       return 1;
-    case R:
+    case U_prime:
       return 2;
-    case R_prime:
+    case R:
       return 3;
-    case F:
+    case R_prime:
       return 4;
-    case F_prime:
+    case F:
       return 5;
-    case U2:
+    case F_prime:
       return 6;
-    case R2:
+    case U2:
       return 7;
-    case F2:
+    case R2:
       return 8;
-    case D:
+    case F2:
       return 9;
-    case D_prime:
+    case D:
       return 10;
-    case D2:
+    case D_prime:
       return 11;
-    case L:
+    case D2:
       return 12;
-    case L_prime:
+    case L:
       return 13;
-    case L2:
+    case L_prime:
       return 14;
-    case B:
+    case L2:
       return 15;
-    case B_prime:
+    case B:
       return 16;
-    case B2:
+    case B_prime:
       return 17;
-    case M_prime:
+    case B2:
       return 18;
-    case M2:
+    case M_prime:
       return 19;
-    case M:
+    case M2:
       return 20;
-    case S:
+    case M:
       return 21;
-    case S_prime:
+    case S:
       return 22;
-    case E_prime:
+    case S_prime:
       return 23;
-    case E:
+    case E_prime:
       return 24;
-    case S2:
+    case E:
       return 25;
-    case E2:
+    case S2:
       return 26;
-    case UD:
+    case E2:
       return 27;
-    case UpDp:
+    case UD:
       return 28;
-    case FB:
+    case UpDp:
       return 29;
-    case FpBp:
+    case FB:
       return 30;
-    case U2D:
+    case FpBp:
       return 31;
-    case U2Dp:
+    case U2D:
       return 32;
-    case D2U:
+    case U2Dp:
       return 33;
-    case D2Up:
+    case D2U:
       return 34;
-    case F2B:
+    case D2Up:
       return 35;
-    case F2Bp:
+    case F2B:
       return 36;
-    case B2F:
+    case F2Bp:
       return 37;
-    case B2Fp:
+    case B2F:
       return 38;
-    case RL:
+    case B2Fp:
       return 39;
-    case RpLp:
+    case RL:
       return 40;
-    case R2L:
+    case RpLp:
       return 41;
-    case R2Lp:
+    case R2L:
       return 42;
-    case L2R:
+    case R2Lp:
       return 43;
-    case L2Rp:
+    case L2R:
       return 44;
+    case L2Rp:
+      return 45;
     default:
       return 45 + move;
   }
@@ -593,8 +597,8 @@ bool is_better_semistable(sequence a, sequence b) {
     return true;
   }
   bool lexicographic = (a < b);
-  int score_a = -1;
-  int score_b = -1;
+  int score_a = 0;
+  int score_b = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     int move_a = a % NUM_MOVES;
     int move_b = b % NUM_MOVES;
@@ -607,9 +611,16 @@ bool is_better_semistable(sequence a, sequence b) {
       return false;
     }
     move_a = semistable_score(move_a);
-    score_a = score_a > move_a ? score_a : move_a;
     move_b = semistable_score(move_b);
-    score_b = score_b > move_b ? score_b : move_b;
+    #if POW_COMPLEXITY
+    move_a *= move_a;
+    score_a += move_a*move_a;
+    move_b *= move_b;
+    score_b += move_b*move_b;
+    #else
+    score_a += move_a;
+    score_b += move_b;
+    #endif
 
     a /= NUM_MOVES;
     b /= NUM_MOVES;
@@ -626,18 +637,27 @@ bool is_better_semistable(sequence a, sequence b) {
   return lexicographic;
 }
 
-int sequence_complexity(sequence seq) {
-  int result = 0;
+double sequence_complexity(sequence seq) {
+  double result = 0;
+  double length = 0;
   for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
     int m = seq % NUM_MOVES;
-    #if MAX_COMPLEXITY
-    result = result > m ? result : m;
+    if (m) {
+      length++;
+    }
+    #if POW_COMPLEXITY
+    result += m*m*m*m;
     #else
     result += m;
     #endif
     seq /= NUM_MOVES;
   }
+  result /= length;
+  #if POW_COMPLEXITY
+  return pow(result, 0.25);
+  #else
   return result;
+  #endif
 }
 
 int sequence_length(sequence seq) {

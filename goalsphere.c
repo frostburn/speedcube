@@ -212,7 +212,9 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
   if (sphere->num_sets < 1) {
     return NULL;
   }
-  if (sphere->sets[0][0] == sphere->hash_func(ldc)) {
+  LocDirCube aligned = *ldc;
+  locdir_realign(&aligned);
+  if (sphere->sets[0][0] == sphere->hash_func(&aligned)) {
     sequence *result = malloc(2 * sizeof(sequence));
     result[0] = I;
     result[1] = SENTINEL;
@@ -225,7 +227,6 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
   sequence* solve(unsigned char search_depth_) {
     unsigned char best_depth = UNKNOWN;
     LocDirCube children[NUM_MOVES - 1];
-    LocDirCube aligned;
     bool best[NUM_MOVES - 1];
     size_t i = 0;
     for (enum move move = U; move <= MAX_MOVE; ++move) {
@@ -298,27 +299,27 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
         path[path_length++] = children[i];
         child_results[num_best] = solve(search_depth_);
 
-        // This shouldn't happen. (best_depth == UNKNOWN) should have triggered above,
+        // Technically the NULL case shouldn't happen. (best_depth == UNKNOWN) should have triggered above,
         // but maybe this is related to hash collisions.
-        if (child_results[num_best] == NULL) {
-          num_best++;
-          path_length--;
-          continue;
-        }
-
-        size_t j = 0;
-        for (;;) {
-          sequence solution = child_results[num_best][j];
-          if (solution == SENTINEL) {
-            break;
+        if (child_results[num_best] != NULL) {
+          size_t j = 0;
+          for (;;) {
+            sequence solution = child_results[num_best][j];
+            if (solution == SENTINEL) {
+              break;
+            }
+            child_results[num_best][j++] = concat(move, solution);
+            num_solutions++;
           }
-          child_results[num_best][j++] = concat(move, solution);
-          num_solutions++;
         }
         num_best++;
         path_length--;
       }
       i++;
+    }
+    if (num_solutions == 0) {
+      free(child_results);
+      return NULL;
     }
     sequence *result = malloc((num_solutions + 1) * sizeof(sequence));
     num_solutions = 0;
@@ -337,6 +338,7 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
       free(child_results[i]);
     }
     result[num_solutions] = SENTINEL;
+    free(child_results);
     return result;
   }
 

@@ -214,11 +214,7 @@ int main() {
   printf("<th>Case</th>\n");
   printf("<th>Algorithm</th>\n");
   printf("<th>Move count</th>\n");
-  #if MAX_COMPLEXITY
   printf("<th>Move complexity</th>\n");
-  #else
-  printf("<th>Total complexity</th>\n");
-  #endif
   printf("</tr>\n");
 
   size_t total = 0;
@@ -306,7 +302,7 @@ int main() {
       printf("</a>\n");
       printf("</td>\n");
       printf("<td>%d</td>\n", sequence_length(solution));
-      printf("<td>%d</td>\n", sequence_complexity(solution));
+      printf("<td>%0.1f</td>\n", sequence_complexity(solution));
       printf("</tr>\n");
 
       #if SCISSORS_ENABLED
