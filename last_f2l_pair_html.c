@@ -58,7 +58,7 @@ int main() {
   int max_length = 0;
 
   for (size_t i = 0; i < num_cases; ++i) {
-    solutions[num_solutions++] = goalsphere_solve(&sphere, cases + i, search_depth, &is_better_semistable);
+    solutions[num_solutions++] = goalsphere_solve(&sphere, cases + i, search_depth, &is_better_stable);
     int length = sequence_length(solutions[num_solutions - 1]);
     max_length = max_length > length ? max_length : length;
   }

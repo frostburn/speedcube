@@ -1682,3 +1682,41 @@ void locdir_color_y(LocDirCube *ldc) {
   ldc->edge_locs[11] = temp;
 }
 */
+
+bool is_better_stable(sequence a, sequence b) {
+  if (sequence_length(a) < sequence_length(b)) {
+    return true;
+  }
+  if (sequence_length(a) > sequence_length(b)) {
+    return false;
+  }
+
+  LocDirCube ldc;
+  locdir_reset(&ldc);
+  locdir_apply_sequence(&ldc, a);
+  bool a_stable = true;
+  for (int i = 0; i < 6; ++i) {
+    if (ldc.center_locs[i] != i) {
+      a_stable = false;
+      break;
+    }
+  }
+
+  locdir_reset(&ldc);
+  locdir_apply_sequence(&ldc, b);
+  bool b_stable = true;
+  for (int i = 0; i < 6; ++i) {
+    if (ldc.center_locs[i] != i) {
+      b_stable = false;
+      break;
+    }
+  }
+  if (a_stable && !b_stable) {
+    return true;
+  }
+  if (!a_stable && b_stable) {
+    return false;
+  }
+
+  return is_better_semistable(a, b);
+}

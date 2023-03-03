@@ -11,7 +11,61 @@
 #include "tablebase.c"
 #include "svg.c"
 
+typedef struct {
+  LocDirCube ldc;
+  sequence solution;
+} Case;
+
+// Bottom omitted for brevity
+const bitboard SLOT_LB = (288ULL << 27) | 72;
+const bitboard SLOT_LF = 288 | (72 << 9);
+const bitboard SLOT_RF = (288 << 9) | (72 << 18);
+const bitboard SLOT_RB = (288 << 18) | (72ULL << 27);
+
+Cube original;
+
+bool slot_modified(Cube *cube, bitboard slot) {
+  return (
+    ((cube->a & slot) != (original.a & slot)) ||
+    ((cube->b & slot) != (original.b & slot)) ||
+    ((cube->c & slot) != (original.c & slot))
+  );
+}
+
+int cmp_case(const void *a, const void *b) {
+  Cube x;
+  Cube y;
+
+  reset(&x);
+  reset(&y);
+
+  apply_sequence(&x, ((Case*)a)->solution);
+  apply_sequence(&y, ((Case*)b)->solution);
+
+  int x_lb = slot_modified(&x, SLOT_LB);
+  int x_lf = slot_modified(&x, SLOT_LF);
+  int x_rb = slot_modified(&x, SLOT_RB);
+
+  int y_lb = slot_modified(&y, SLOT_LB);
+  int y_lf = slot_modified(&y, SLOT_LF);
+  int y_rb = slot_modified(&y, SLOT_RB);
+
+  if (x_lb + x_lf + x_rb < y_lb + y_lf + y_rb) {
+    return -1;
+  }
+  if (x_lb + x_lf + x_rb > y_lb + y_lf + y_rb) {
+    return 1;
+  }
+
+  x_lb += 2*x_lf + 4*x_rb;
+  y_lb += 2*y_lf + 4*y_rb;
+
+  return x_lb - y_lb;
+}
+
 int main() {
+  reset(&original);
+
   FILE *fptr;
   size_t num_read;
   size_t tablebase_size;
@@ -38,7 +92,7 @@ int main() {
   fprintf(stderr, "Generating cases...\n");
   LocDirCube root;
 
-  LocDirCube *cases = malloc(384 * sizeof(LocDirCube));
+  Case *cases = malloc(384 * sizeof(Case));
   size_t num_cases = 0;
 
   locdir_reset_xcross(&root);
@@ -53,7 +107,7 @@ int main() {
         root.edge_locs[4] = k;
         for (int l = 0; l < 2; ++l) {
           root.edge_dirs[4] = l;
-          cases[num_cases++] = root;
+          cases[num_cases++].ldc = root;
         }
       }
     }
@@ -62,16 +116,18 @@ int main() {
   fprintf(stderr, "%zu cases generated\n", num_cases);
 
   fprintf(stderr, "Solving cases...\n");
-  sequence *solutions = malloc(384 * sizeof(sequence));
-  size_t num_solutions;
   int max_length = 0;
 
   for (size_t i = 0; i < num_cases; ++i) {
-    locdir_y2(cases + i);
-    solutions[num_solutions++] = nibble_solve(&tablebase, cases + i, &is_better_semistable);
-    int length = sequence_length(solutions[num_solutions - 1]);
+    locdir_y2(&cases[i].ldc);
+    cases[i].solution = nibble_solve(&tablebase, &cases[i].ldc, &is_better_stable);
+    cases[i].ldc.center_locs[4] = -1;
+    int length = sequence_length(cases[i].solution);
     max_length = max_length > length ? max_length : length;
   }
+
+  qsort(cases, 384, sizeof(Case), cmp_case);
+
   fprintf(stderr, "Priting results...\n");
 
   printf("<html>\n");
@@ -113,19 +169,19 @@ int main() {
     printf("<th>Case</th>\n");
     printf("<th>Opposite view</th>\n");
     printf("<th>Algorithm</th>\n");
+    printf("<th>Slots affected</th>\n");
     printf("</tr>\n");
 
     for (size_t i = 0; i < num_cases; ++i) {
-      if (sequence_length(solutions[i]) != length) {
+      if (sequence_length(cases[i].solution) != length) {
         continue;
       }
       printf("<tr>\n");
       printf("<td class=\"case\">\n");
-      cases[i].center_locs[4] = -1;
-      ufr_svg(cases + i);
+      ufr_svg(&cases[i].ldc);
       printf("</td>\n");
 
-      LocDirCube view = cases[i];
+      LocDirCube view = cases[i].ldc;
       locdir_x2(&view);
       locdir_y_prime(&view);
       printf("<td class=\"case\">\n");
@@ -133,8 +189,36 @@ int main() {
       printf("</td>\n");
 
       printf("<td>\n");
-      print_sequence(solutions[i]);
+      print_sequence(cases[i].solution);
       printf("</td>\n");
+
+      printf("<td>\n");
+      Cube cube;
+      reset(&cube);
+      apply_sequence(&cube, cases[i].solution);
+      bool comma = false;
+      if (slot_modified(&cube, SLOT_LB)) {
+        printf("LB");
+        comma = true;
+      }
+      if (slot_modified(&cube, SLOT_LF)) {
+        if (comma) {
+          printf(", ");
+        }
+        printf("LF");
+        comma = true;
+      }
+      if (slot_modified(&cube, SLOT_RB)) {
+        if (comma) {
+          printf(", ");
+        }
+        printf("RB");
+      }
+      if (length > 0) {
+        assert(slot_modified(&cube, SLOT_RF));
+      }
+      printf("</td>\n");
+
       printf("</tr>\n");
     }
 
