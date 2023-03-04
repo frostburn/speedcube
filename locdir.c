@@ -1,7 +1,5 @@
 // Locations and directions/orientations of cubies
 
-#define ALTERNATIVE_HASH 0
-
 typedef struct {
   char corner_locs[8];
   char corner_dirs[8];
@@ -156,7 +154,8 @@ bool locdir_cross_solved(LocDirCube *ldc) {
 
 size_t locdir_corner_index(LocDirCube *ldc) {
   size_t result = 0;
-  for (int i = 0; i < 8; ++i) {
+  // The location and orientation of the last corner can be determined given the rest
+  for (int i = 0; i < 7; ++i) {
     char loc = ldc->corner_locs[i];
     for (int j = i - 1; j >= 0; --j) {
       if (ldc->corner_locs[j] < ldc->corner_locs[i]) {
@@ -164,10 +163,7 @@ size_t locdir_corner_index(LocDirCube *ldc) {
       }
     }
     result = loc + result * (8 - i);
-    // The orientation of the last corner can be determined given the rest
-    if (i < 7) {
-      result = ldc->corner_dirs[i] + 3 * result;
-    }
+    result = ldc->corner_dirs[i] + 3 * result;
   }
   return result;
 }
@@ -193,7 +189,8 @@ const size_t LOCDIR_FOUR_CORNER_INDEX_SPACE = 8*7*6*5 * 3*3*3*3;
 
 size_t locdir_edge_index(LocDirCube *ldc) {
   size_t result = 0;
-  for (int i = 0; i < 12; ++i) {
+  // The location and orientation of the last edge can be determined given the rest
+  for (int i = 0; i < 11; ++i) {
     char loc = ldc->edge_locs[i];
     for (int j = i - 1; j >= 0; --j) {
       if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
@@ -201,10 +198,7 @@ size_t locdir_edge_index(LocDirCube *ldc) {
       }
     }
     result = loc + result * (12 - i);
-    // The orientation of the last edge can be determined given the rest
-    if (i < 11) {
-      result = ldc->edge_dirs[i] + 2 * result;
-    }
+    result = ldc->edge_dirs[i] + 2 * result;
   }
   return result;
 }
@@ -418,12 +412,26 @@ size_t locdir_f2l_index(LocDirCube *ldc) {
 
 const size_t LOCDIR_F2L_INDEX_SPACE = 12ULL*11*10*9 * 8*7*6*5 * 2*2*2*2 * 2*2*2*2 * 8*7*6*5 * 3*3*3*3;
 
+// NOTE: This overflows, so it's a hash, not an index
 size_t locdir_centerless_hash(LocDirCube *ldc) {
-  #if ALTERNATIVE_HASH
-  return locdir_edge_index(ldc) ^ (209194574107ULL * locdir_corner_index(ldc));
-  #else
-  return locdir_corner_index(ldc) ^ (18804110 * locdir_edge_index(ldc));
-  #endif
+  size_t result = locdir_corner_index(ldc);
+
+  // The location of the last two cubies can be determined given the corners
+  for (int i = 0; i < 10; ++i) {
+    char loc = ldc->edge_locs[i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[i] + 2 * result;
+  }
+  // Second to last edge:
+  result = ldc->edge_dirs[10] + 2 * result;
+  // The orientation of the last edge can be determined given the rest
+
+  return result;
 }
 
 bitboard corner_to_bitboard(char loc, char dir) {
@@ -1719,4 +1727,16 @@ bool is_better_stable(sequence a, sequence b) {
   }
 
   return is_better_semistable(a, b);
+}
+
+bool is_stable(sequence seq) {
+  LocDirCube ldc;
+  locdir_reset(&ldc);
+  locdir_apply_sequence(&ldc, seq);
+  for (int i = 0; i < 6; ++i) {
+    if (ldc.center_locs[i] != i) {
+      return false;
+    }
+  }
+  return true;
 }

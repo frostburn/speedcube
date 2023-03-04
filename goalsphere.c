@@ -76,7 +76,19 @@ unsigned char goalsphere_depth_(GoalSphere *sphere, size_t hash) {
 
 bool goalsphere_shell(GoalSphere *sphere, LocDirCube *ldc) {
   size_t last = sphere->num_sets - 1;
-  return set_has(sphere->sets[last], sphere->set_sizes[last], (*sphere->hash_func)(ldc));
+  if (set_has(sphere->sets[last], sphere->set_sizes[last], (*sphere->hash_func)(ldc))) {
+    // Double check to rule out hash collisions
+    size_t penultimate = sphere->num_sets - 2;
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
+      LocDirCube child = *ldc;
+      locdir_apply_stable(&child, STABLE_MOVES[i]);
+      if (set_has(sphere->sets[penultimate], sphere->set_sizes[penultimate], (*sphere->hash_func)(&child))) {
+        return true;
+      }
+    }
+    return false;
+  }
+  return false;
 }
 
 unsigned char goalsphere_depth(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
