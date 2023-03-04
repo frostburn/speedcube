@@ -201,7 +201,7 @@ void prepare_global_solver() {
   #endif
 }
 
-sequence global_solve(LocDirCube *ldc) {
+unsigned char global_lower_bound(LocDirCube *ldc) {
   unsigned char lower_bound = goalsphere_depth(&GLOBAL_SOLVER.edge_goal, ldc, 0);
   if (lower_bound == UNKNOWN) {
     ida_star_solve(&GLOBAL_SOLVER.edge_ida, ldc, 0);
@@ -210,13 +210,16 @@ sequence global_solve(LocDirCube *ldc) {
 
   unsigned char goal_depth = GLOBAL_SOLVER.goal.num_sets - 1;
   if (lower_bound < goal_depth) {
-    lower_bound = 0;
-  } else {
-    lower_bound -= goal_depth;
+    return 0;
   }
+  return lower_bound - goal_depth;
+}
+
+sequence global_solve(LocDirCube *ldc) {
+  unsigned char lower_bound = global_lower_bound(ldc);
 
   sequence first_steps = I;
-  goal_depth = goalsphere_depth(&GLOBAL_SOLVER.goal, ldc, 0);
+  unsigned char  goal_depth = goalsphere_depth(&GLOBAL_SOLVER.goal, ldc, 0);
   if (goal_depth == UNKNOWN) {
     #ifdef _OPENMP
     ida_star_solve_parallel(&GLOBAL_SOLVER.ida, ldc, lower_bound);
@@ -229,6 +232,43 @@ sequence global_solve(LocDirCube *ldc) {
   locdir_apply_sequence(&clone, first_steps);
   sequence final_steps = goalsphere_solve(&GLOBAL_SOLVER.goal, &clone, 0, &is_better);
   return concat(first_steps, final_steps);
+}
+
+sequence* global_solve_all(LocDirCube *ldc) {
+  unsigned char goal_depth = goalsphere_depth(&GLOBAL_SOLVER.goal, ldc, 0);
+  if (goal_depth != UNKNOWN) {
+    return goalsphere_solve_all(&GLOBAL_SOLVER.goal, ldc, 0);
+  }
+
+  unsigned char lower_bound = global_lower_bound(ldc);
+
+  sequence *result = malloc(sizeof(sequence));
+  size_t num_results = 0;
+
+  sequence *initials = ida_star_solve_all(&GLOBAL_SOLVER.ida, ldc, lower_bound);
+  sequence *it = initials;
+  while (*it != SENTINEL) {
+    LocDirCube clone = *ldc;
+    locdir_apply_sequence(&clone, *it);
+    sequence *finals = goalsphere_solve_all(&GLOBAL_SOLVER.goal, &clone, 0);
+    sequence *fit = finals;
+    size_t num_final = 0;
+    while (*fit != SENTINEL) {
+      num_final++;
+      *fit = concat(*it, *fit);
+      fit++;
+    }
+    result = realloc(result, (num_results + num_final + 1) * sizeof(sequence));
+    fit = finals;
+    while (*fit != SENTINEL) {
+      result[num_results++] = *fit;
+      fit++;
+    }
+
+    it++;
+  }
+  result[num_results] = SENTINEL;
+  return result;
 }
 
 void free_global_solver() {

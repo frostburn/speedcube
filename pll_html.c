@@ -192,20 +192,9 @@ void pll_svg(LocDirCube *ldc) {
 }
 
 int main() {
-  size_t search_depth = 4;
   prepare_global_solver();
 
   LocDirCube root;
-
-  /*
-  search_depth = 5;
-  size_t radius = 7;
-  fprintf(stderr, "Generating a goal sphere of radius %zu.\n", radius);
-  free_goalsphere(&GLOBAL_SOLVER.goal);
-  locdir_reset(&root);
-  GLOBAL_SOLVER.goal = init_goalsphere(&root, radius, &locdir_centerless_hash);
-  */
-
 
   char *names[] = {
     "Aa",
@@ -452,8 +441,9 @@ int main() {
 
   LocDirCube ldc;
   sequence setup;
+  sequence *solutions;
+  sequence *candidate;
   sequence solution;
-  char *solver;
 
   printf("<html>\n");
   printf("<head>\n");
@@ -484,7 +474,6 @@ int main() {
   printf("<th>Algorithm</th>\n");
   printf("<th>Move count</th>\n");
   printf("<th>Move complexity</th>\n");
-  printf("<th>Solver</th>\n");
   printf("</tr>\n");
 
   size_t total = 0;
@@ -585,120 +574,50 @@ int main() {
       printf("<td class=\"case\">\n");
       pll_svg(&ldc);
       printf("</td>\n");
-      solver = "MitM";
-      size_t depth = 0;
-      for (; depth < search_depth; ++depth) {
-        if (goalsphere_depth(&GLOBAL_SOLVER.goal, &ldc, depth) != UNKNOWN) {
-          break;
-        }
-      }
-      fprintf(stderr, "Depth = %zu + %zu\n", depth, GLOBAL_SOLVER.goal.num_sets - 1);
-      sequence *solutions = NULL;
-      solution = INVALID;
-      solutions = goalsphere_solve_all(&GLOBAL_SOLVER.goal, &ldc, depth);
+      solutions = global_solve_all(&ldc);
       fprintf(stderr, "Solutions @ %p\n", solutions);
-      if (solutions == NULL) {
-        solver = "IDA*";
-        solutions = NULL;
-        solution = global_solve(&ldc);
-        fprint_sequence(stderr, solution);
-        fprintf(stderr, "\nIDA*\n");
-      } else {
-        solution = INVALID;
-        sequence* candidate = solutions;
-        size_t num_solutions = 0;
-        while (*candidate != SENTINEL) {
-          solution = is_better(solution, *candidate) ? solution : *candidate;
-          candidate++;
-          num_solutions++;
-        }
-        fprint_sequence(stderr, solution);
-        fprintf(stderr, "\n%zu solutions found.\n", num_solutions);
+      solution = INVALID;
+      candidate = solutions;
+      size_t num_solutions = 0;
+      while (*candidate != SENTINEL) {
+        solution = is_better(solution, *candidate) ? solution : *candidate;
+        candidate++;
+        num_solutions++;
       }
+      fprint_sequence(stderr, solution);
+      fprintf(stderr, "\n%zu solutions found.\n", num_solutions);
       printf("<td>\n");
-      if (solutions != NULL) {
-        #if SCISSORS_ENABLED
-        printf("<a href=\"txt/pll_scissors_%zu_%zu.txt\">\n", i, k);
-        #else
-        printf("<a href=\"txt/pll_%zu_%zu.txt\">\n", i, k);
-        #endif
-      }
+      #if SCISSORS_ENABLED
+      printf("<a href=\"txt/pll_scissors_%zu_%zu.txt\">\n", i, k);
+      #else
+      printf("<a href=\"txt/pll_%zu_%zu.txt\">\n", i, k);
+      #endif
       print_sequence(solution);
-      if (solutions != NULL) {
-        printf("</a>\n");
-      }
+      printf("</a>\n");
       printf("</td>\n");
       printf("<td>%d</td>\n", sequence_length(solution));
       printf("<td>%0.1f</td>\n", sequence_complexity(solution));
-      printf("<td>%s</td>\n", solver);
       printf("</tr>\n");
-
-      if (solutions != NULL) {
-        #if SCISSORS_ENABLED
-        sprintf(filename, "txt/pll_scissors_%zu_%zu.txt", i, k);
-        #else
-        sprintf(filename, "txt/pll_%zu_%zu.txt", i, k);
-        #endif
-        FILE *fptr = fopen(filename, "w");
-        sequence *candidate = solutions;
-        while (*candidate != SENTINEL) {
-          fprint_sequence(fptr, *candidate);
-          fprintf(fptr, "\n");
-          candidate++;
-        }
-        fclose(fptr);
-
-        free(solutions);
+      #if SCISSORS_ENABLED
+      sprintf(filename, "txt/pll_scissors_%zu_%zu.txt", i, k);
+      #else
+      sprintf(filename, "txt/pll_%zu_%zu.txt", i, k);
+      #endif
+      FILE *fptr = fopen(filename, "w");
+      candidate = solutions;
+      while (*candidate != SENTINEL) {
+        fprint_sequence(fptr, *candidate);
+        fprintf(fptr, "\n");
+        candidate++;
       }
+      fclose(fptr);
+
+      free(solutions);
 
       total++;
       locdir_U(&ldc);
     }
   }
-
-  /*
-  fprintf(stderr, "%zu cases remain\n", num_cases);
-  size_t i = 0;
-  while (num_cases) {
-    fprintf(stderr, "Solving extra case %zu\n", i);
-
-    ldc = cases[0];
-
-    for (size_t k = 0; k < 4; ++k) {
-      size_t j = 0;
-      for (; j < num_cases; ++j) {
-        if (locdir_equals(&ldc, cases + j)) {
-          break;
-        }
-      }
-      assert(j < num_cases);
-      for (; j < num_cases - 1; ++j) {
-        cases[j] = cases[j + 1];
-      }
-      num_cases--;
-
-      printf("<tr>\n");
-      printf("<td>%zu-%zu</td>", i, k);
-      printf("<td class=\"case\">\n");
-      pll_svg(&ldc);
-      printf("</td>\n");
-      fprintf(stderr, "Solving %zu-%zu with a goal sphere\n", i, k);
-      solution = goalsphere_solve(&sphere, &ldc, search_depth);
-      if (solution == INVALID) {
-        fprintf(stderr, "Switching to IDA*\n");
-        ida_star_solve(&GLOBAL_SOLVER.ida, &ldc);
-        solution = ida_to_sequence(&GLOBAL_SOLVER.ida);
-      }
-      printf("<td>\n");
-      print_sequence(solution);
-      printf("</td>\n");
-      printf("</tr>\n");
-      locdir_U(&ldc);
-      total++;
-    }
-    i++;
-  }
-  */
 
   // Make sure that everything was solved.
   assert(num_cases == 0);
