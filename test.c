@@ -10,6 +10,7 @@
 #include "locdir.c"
 #include "tablebase.c"
 #include "goalsphere.c"
+#include "ida_star.c"
 
 typedef struct
 {
@@ -75,6 +76,50 @@ void test_hash_collisions() {
 
   assert(num_unique == sphere_total);
   free_goalsphere(&sphere);
+}
+
+unsigned char testimator(LocDirCube *ldc) {
+  for (int i = 0; i < 8; ++i) {
+    if (ldc->corner_locs[i] != i) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+void test_ida_star() {
+  IDAstar ida;
+  ida.is_solved = locdir_centerless_solved;
+  ida.estimator = testimator;
+
+  LocDirCube ldc;
+  locdir_reset(&ldc);
+  locdir_F(&ldc);
+  locdir_U(&ldc);
+  locdir_F_prime(&ldc);
+
+  ida_star_solve(&ida, &ldc, 0);
+
+  assert(ida.path_length == 4);
+
+  sequence solution = ida_to_sequence(&ida);
+
+  assert(sequence_length(solution) == 3);
+
+  sequence *solutions = ida_star_solve_all(&ida, &ldc, 0);
+  size_t num_solutions = 0;
+
+  sequence expected = parse("F U' F'");
+  bool found = false;
+  while(*solutions != SENTINEL) {
+    assert(sequence_length(*solutions) == 3);
+    found = found || (*solutions == expected);
+    num_solutions++;
+    solutions++;
+  }
+  assert(found);
+
+  assert(num_solutions == 8);
 }
 
 void test_locdir() {
@@ -448,6 +493,8 @@ int main() {
   printf("All cube tests pass!\n");
 
   test_locdir();
+
+  test_ida_star();
 
   test_hash_collisions();
 

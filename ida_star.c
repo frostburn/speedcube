@@ -216,3 +216,96 @@ sequence ida_to_sequence(IDAstar *ida) {
 
   return seq;
 }
+
+sequence* ida_star_search_all(IDAstar *ida, unsigned char so_far, unsigned char bound) {
+  LocDirCube aligned = ida->path[ida->path_length - 1];
+  locdir_realign(&aligned);
+  unsigned char to_go = (*ida->estimator)(&aligned);
+  unsigned char lower_bound = so_far + to_go;
+  if (lower_bound > bound) {
+    return NULL;
+  }
+  if (to_go == 0 && (*ida->is_solved)(&aligned)) {
+    sequence* result = malloc(2 * sizeof(sequence));
+    result[0] = I;
+    result[1] = SENTINEL;
+    return result;
+  }
+  int min = UNKNOWN;
+  sequence* child_results[(NUM_MOVES - 1)];
+  size_t num_child_results = 0;
+  for (enum move move = U; move <= MAX_MOVE; ++move) {
+    ida->path[ida->path_length] = ida->path[ida->path_length - 1];
+    locdir_apply(ida->path + ida->path_length, move);
+
+    bool in_path = false;
+    for (size_t j = 0; j < ida->path_length; ++j) {
+      if (locdir_equals(ida->path + ida->path_length, ida->path + j)) {
+        in_path = true;
+        break;
+      }
+    }
+    if (in_path) {
+      continue;
+    }
+
+    ida->path_length++;
+    sequence* child_result = ida_star_search_all(ida, so_far + 1, bound);
+    if (child_result != NULL) {
+      int child_length = sequence_length(child_result[0]);
+      if (child_length > min) {
+        free(child_result);
+      }
+      if (child_length < min) {
+        min = child_length;
+        for (size_t i = 0; i < num_child_results; ++i) {
+          free(child_results[i]);
+        }
+        num_child_results = 0;
+      }
+      if (child_length <= min) {
+        sequence *it = child_result;
+        while (*it != SENTINEL) {
+          *it = concat(move, *it);
+          it++;
+        }
+        child_results[num_child_results++] = child_result;
+      }
+    }
+
+    ida->path_length--;
+  }
+
+  size_t num_solutions = 0;
+  for (size_t i = 0; i < num_child_results; ++i) {
+    sequence *it = child_results[i];
+    while (*it != SENTINEL) {
+      num_solutions++;
+      it++;
+    }
+  }
+
+  sequence *result = malloc((num_solutions+1) * sizeof(sequence));
+  num_solutions = 0;
+
+  for (size_t i = 0; i < num_child_results; ++i) {
+    sequence *it = child_results[i];
+    while (*it != SENTINEL) {
+      result[num_solutions++] = *it;
+      it++;
+    }
+    free(child_results[i]);
+  }
+  result[num_solutions] = SENTINEL;
+
+  return result;
+}
+
+sequence* ida_star_solve_all(IDAstar *ida, LocDirCube *ldc, unsigned char lower_bound) {
+  // Obtain the correct bound iteratively
+  ida_star_solve(ida, ldc, lower_bound);
+
+  unsigned char bound = ida->path_length - 1;
+  ida->path_length = 1;
+  return ida_star_search_all(ida, 0, bound);
+}
