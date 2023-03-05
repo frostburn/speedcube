@@ -54,9 +54,13 @@ void oll_svg(Cube *cube) {
 }
 
 int main() {
-  size_t radius = 7;
-  radius = 6;
+  #if SCISSORS_ENABLED
+  size_t radius = 6;
   size_t search_depth = 4;
+  #else
+  size_t radius = 7;
+  size_t search_depth = 3;
+  #endif
 
   LocDirCube root;
   fprintf(stderr, "Generating an OLL goal sphere of radius %zu.\n", radius);
@@ -202,8 +206,13 @@ int main() {
   printf("</head>\n");
   printf("<body>\n");
   printf("<p>OLL (Orientation of the Last Layer) solves the top color of the last layer.</p>\n");
+  #if SCISSORS_ENABLED
+  printf("<p>Next step: <a href=\"pll-scissors.html\">PLL</a></p>\n");
+  #else
   printf("<p>Next step: <a href=\"pll.html\">PLL</a></p>\n");
+  #endif
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
+  printf("<p>If there are two solutions listed the second one doesn't rotate the cube at the cost of some complexity.</p>\n");
   #if SCISSORS_ENABLED
   printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
@@ -267,17 +276,51 @@ int main() {
       }
       // fprintf(stderr, "%zu = %zu @ %d\n", index, i, sequence_length(solution));
 
-      sequence* solutions = goalsphere_solve_all(&sphere, ldcs + j, search_depth);
-      if (solutions == NULL) {
+      collection stable = goalsphere_solve_all_stable(&sphere, ldcs + j, search_depth);
+      if (stable == NULL) {
         fprintf(stderr, "Failed to solve.\n");
         continue;
       }
+      collection solutions = malloc(sizeof(sequence));
+      solutions[0] = SENTINEL;
+
+      collection it = stable;
+      while (*it != SENTINEL) {
+        solutions = extend_collection(solutions, expand_stable_sequence(*it));
+        it++;
+      }
+
       sequence solution = INVALID;
-      sequence* candidate = solutions;
+      collection candidate = solutions;
       while (*candidate != SENTINEL) {
         solution = is_better(solution, *candidate) ? solution : *candidate;
         candidate++;
       }
+
+      sequence stable_solution;
+      bool print_stable = false;
+      if (is_stable(solution)) {
+        stable_solution = solution;
+      } else {
+        stable_solution = INVALID;
+        candidate = solutions;
+        while (*candidate != SENTINEL) {
+          if (is_better(*candidate, stable_solution) && is_stable(*candidate)) {
+            stable_solution = *candidate;
+          }
+          candidate++;
+        }
+        if (stable_solution == INVALID) {
+          fprintf(stderr, "No stable solutions, replacing slices...\n");
+          candidate = stable;
+          while (*candidate != SENTINEL) {
+            stable_solution = is_better(stable_solution, *candidate) ? stable_solution : *candidate;
+            candidate++;
+          }
+          print_stable = true;
+        }
+      }
+      free(stable);
 
       printf("<tr>\n");
       if (j == 0) {
@@ -300,9 +343,21 @@ int main() {
       #endif
       print_sequence(solution);
       printf("</a>\n");
+      if (solution != stable_solution || print_stable) {
+        printf("<br>\n");
+        if (print_stable) {
+          print_stable_sequence(stable_solution);
+        } else {
+          print_sequence(stable_solution);
+        }
+      }
       printf("</td>\n");
       printf("<td>%d</td>\n", sequence_length(solution));
-      printf("<td>%0.1f</td>\n", sequence_complexity(solution));
+      printf("<td>%0.1f\n", sequence_complexity(solution));
+      if (solution != stable_solution) {
+        printf("<br>%0.1f\n", sequence_complexity(stable_solution));
+      }
+      printf("</td>");
       printf("</tr>\n");
 
       #if SCISSORS_ENABLED

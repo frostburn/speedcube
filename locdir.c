@@ -152,6 +152,40 @@ bool locdir_cross_solved(LocDirCube *ldc) {
   return true;
 }
 
+bool locdir_oll_solved(LocDirCube *ldc) {
+  // Bottom corners
+  for (int i = 0; i < 4; ++i) {
+    if (ldc->corner_locs[4 + i] != 4 + i) {
+      return false;
+    }
+    if (ldc->corner_dirs[4 + i] != 0) {
+      return false;
+    }
+  }
+  // F2L edges
+  for (int i = 0; i < 8; ++i) {
+    if (ldc->edge_locs[4 + i] != 4 + i) {
+      return false;
+    }
+    if (!ldc->edge_dirs[4 + i]) {
+      return false;
+    }
+  }
+  // Top corners
+  for (int i = 0; i < 4; ++i) {
+    if (ldc->corner_dirs[i] != 0) {
+      return false;
+    }
+  }
+  // Top edges
+  for (int i = 0; i < 4; ++i) {
+    if (!ldc->edge_dirs[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 size_t locdir_corner_index(LocDirCube *ldc) {
   size_t result = 0;
   // The location and orientation of the last corner can be determined given the rest
@@ -1122,6 +1156,7 @@ void locdir_S2(LocDirCube *ldc) {
 #endif
 
 // Slices re-interpreted as synchronized opposite side turns
+// i.e. E = D'U
 // Basically removes I, u, d, r, l, f and b.
 enum move STABLE_MOVES[] = {
   U, U_prime,
@@ -1158,8 +1193,54 @@ enum move STABLE_MOVES[] = {
   R2L, R2Lp, L2R, L2Rp,
 };
 
+void fprint_stable_sequence(FILE *file, sequence seq) {
+  if (seq == INVALID) {
+    fprintf(file, "<DNF>");
+    return;
+  }
+  sequence reversed = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  seq = reversed;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    enum move move = seq % NUM_MOVES;
+    if (move == M) {
+      fprintf(file, "[L'R] ");
+    } else if (move == M_prime) {
+      fprintf(file, "[R'L] ");
+    } else if (move == M2) {
+      fprintf(file, "[R2L2] ");
+    } else if (move == E) {
+      fprintf(file, "[D'U] ");
+    } else if (move == E_prime) {
+      fprintf(file, "[U'D] ");
+    } else if (move == E2) {
+      fprintf(file, "[U2D2] ");
+    } else if (move == S) {
+      fprintf(file, "[F'B] ");
+    } else if (move == S_prime) {
+      fprintf(file, "[B'F] ");
+    } else if (move == S2) {
+      fprintf(file, "[F2B2] ");
+    } else if (move != I) {
+      fprintf(file, "%s ", move_to_string(move));
+    }
+    seq /= NUM_MOVES;
+  }
+}
+
+void print_stable_sequence(sequence seq) {
+  fprint_stable_sequence(stdout, seq);
+  printf("\n");
+}
+
 void locdir_apply_stable(LocDirCube *ldc, enum move move) {
   switch (move) {
+    case I:
+      // I is not part of the stable set, but can appear in some contexts due to padding
+      break;
     case U:
       locdir_U(ldc);
       break;
@@ -1576,6 +1657,19 @@ void locdir_apply_sequence(LocDirCube *ldc, sequence seq) {
   }
 }
 
+void locdir_apply_stable_sequence(LocDirCube *ldc, sequence seq) {
+  sequence reversed = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  seq = reversed;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    locdir_apply_stable(ldc, seq % NUM_MOVES);
+    seq /= NUM_MOVES;
+  }
+}
+
 /* Rotate the cube so that the centers are in the standard position. */
 void locdir_realign(LocDirCube *ldc) {
   // Move white to the bottom
@@ -1739,4 +1833,49 @@ bool is_stable(sequence seq) {
     }
   }
   return true;
+}
+
+collection expand_stable_sequence_(sequence seq, LocDirCube *stable_, LocDirCube *unstable) {
+  enum move stable_move = seq % NUM_MOVES;
+
+  collection results;
+  if (!stable_move) {
+    results = malloc(2 * sizeof(sequence));
+    results[0] = I;
+    results[1] = SENTINEL;
+    return results;
+  }
+
+  seq /= NUM_MOVES;
+
+  LocDirCube stable = *stable_;
+  locdir_apply_stable(&stable, stable_move);
+
+  results = malloc(sizeof(sequence));
+  results[0] = SENTINEL;
+  for (enum move move = U; move <= MAX_MOVE; ++move) {
+    LocDirCube child = *unstable;
+    locdir_apply(&child, move);
+    LocDirCube aligned = child;
+    locdir_realign(&aligned);
+    if (locdir_equals(&stable, &aligned)) {
+      collection variants = expand_stable_sequence_(seq, &stable, &child);
+      collection it = variants;
+      while (*it != SENTINEL) {
+        *it = concat(move, *it);
+        it++;
+      }
+      results = extend_collection(results, variants);
+      free(variants);
+    }
+  }
+  return results;
+}
+
+collection expand_stable_sequence(sequence seq) {
+  LocDirCube stable;
+  locdir_reset(&stable);
+  LocDirCube unstable = stable;
+
+  return expand_stable_sequence_(reverse(seq), &stable, &unstable);
 }

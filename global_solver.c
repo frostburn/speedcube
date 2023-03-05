@@ -234,40 +234,54 @@ sequence global_solve(LocDirCube *ldc) {
   return concat(first_steps, final_steps);
 }
 
-sequence* global_solve_all(LocDirCube *ldc) {
+collection global_solve_all_stable(LocDirCube *ldc) {
   unsigned char goal_depth = goalsphere_depth(&GLOBAL_SOLVER.goal, ldc, 0);
   if (goal_depth != UNKNOWN) {
-    return goalsphere_solve_all(&GLOBAL_SOLVER.goal, ldc, 0);
+    return goalsphere_solve_all_stable(&GLOBAL_SOLVER.goal, ldc, 0);
   }
 
   unsigned char lower_bound = global_lower_bound(ldc);
 
-  sequence *result = malloc(sizeof(sequence));
-  size_t num_results = 0;
+  collection result = malloc(sizeof(sequence));
+  result[0] = SENTINEL;
 
-  sequence *initials = ida_star_solve_all(&GLOBAL_SOLVER.ida, ldc, lower_bound);
-  sequence *it = initials;
+  collection initials = ida_star_solve_all_stable(&GLOBAL_SOLVER.ida, ldc, lower_bound);
+  collection it = initials;
   while (*it != SENTINEL) {
     LocDirCube clone = *ldc;
-    locdir_apply_sequence(&clone, *it);
-    sequence *finals = goalsphere_solve_all(&GLOBAL_SOLVER.goal, &clone, 0);
-    sequence *fit = finals;
-    size_t num_final = 0;
+    locdir_apply_stable_sequence(&clone, *it);
+    collection finals = goalsphere_solve_all_stable(&GLOBAL_SOLVER.goal, &clone, 0);
+    if (finals == NULL) {
+      fprintf(stderr, "IDA* landed outside the goalsphere.\n");
+      exit(EXIT_FAILURE);
+    }
+    collection fit = finals;
     while (*fit != SENTINEL) {
-      num_final++;
       *fit = concat(*it, *fit);
       fit++;
     }
-    result = realloc(result, (num_results + num_final + 1) * sizeof(sequence));
-    fit = finals;
-    while (*fit != SENTINEL) {
-      result[num_results++] = *fit;
-      fit++;
-    }
 
+    result = extend_collection(result, finals);
+    free(finals);
     it++;
   }
-  result[num_results] = SENTINEL;
+  free(initials);
+
+  return result;
+}
+
+collection global_solve_all(LocDirCube *ldc) {
+  collection result = malloc(sizeof(sequence));
+  result[0] = SENTINEL;
+
+  collection stable = global_solve_all_stable(ldc);
+  collection it = stable;
+  while (*it != SENTINEL) {
+    result = extend_collection(result, expand_stable_sequence(*it));
+    it++;
+  }
+  free(stable);
+
   return result;
 }
 
