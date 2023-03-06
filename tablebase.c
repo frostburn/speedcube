@@ -158,3 +158,69 @@ sequence nibble_solve(Nibblebase *tablebase, LocDirCube *ldc, bool (*better)(seq
 
   return solve(ldc);
 }
+
+collection nibble_solve_all(Nibblebase *tablebase, LocDirCube *ldc) {
+  LocDirCube aligned = *ldc;
+  locdir_realign(&aligned);
+  unsigned char depth = nibble_depth(tablebase, &aligned);
+  if (depth == 0) {
+    collection result = empty_collection();
+    return collection_push(result, I);
+  }
+
+  collection solve(LocDirCube *parent) {
+    unsigned char best_depth = UNKNOWN;
+    LocDirCube children[NUM_MOVES - 1];
+    bool best[NUM_MOVES - 1];
+    size_t i = 0;
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
+      children[i] = *parent;
+      locdir_apply(children + i, move);
+      aligned = children[i];
+      locdir_realign(&aligned);
+      size_t index = (*tablebase->index_func)(&aligned);
+      unsigned char depth = get_nibble(tablebase, index);
+      if (depth < best_depth) {
+        best_depth = depth;
+        for (int idx = 0; idx < i; ++idx) {
+          best[idx] = false;
+        }
+      }
+      best[i] = (depth <= best_depth);
+      i++;
+    }
+
+    collection result = empty_collection();
+    if (best_depth == 0) {
+      i = 0;
+      for (enum move move = U; move <= MAX_MOVE; ++move) {
+        if (best[i]) {
+          result = collection_push(result, move);
+        }
+        i++;
+      }
+      return result;
+    }
+
+    if (best_depth == UNKNOWN) {
+      return NULL;
+    }
+
+    i = 0;
+    for (enum move move = U; move <= MAX_MOVE; ++move) {
+      if (best[i]) {
+        collection child_collection = solve(children + i);
+        collection it = child_collection;
+        while (*it != SENTINEL) {
+          result = collection_push(result, concat(move, *it));
+          it++;
+        }
+        free(child_collection);
+      }
+      i++;
+    }
+    return result;
+  }
+
+  return solve(ldc);
+}

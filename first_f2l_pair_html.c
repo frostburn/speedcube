@@ -146,6 +146,11 @@ int main() {
   printf("</head>\n");
   printf("<body>\n");
   printf("<p>Shortest algorithms for solving the first F2L pair.</p>");
+  #if SCISSORS_ENABLED
+  printf("<p>There are also a list for the <a href=\"last-f2l-pair-scissors.html\">last pair</a>.</p>");
+  #else
+  printf("<p>There are also a list for the <a href=\"last-f2l-pair.html\">last pair</a>.</p>");
+  #endif
   printf("<p>");
   printf("<span style=\"color:blue\">Blue</span> face is <b>F</b>ront.<br>");
   printf("<span style=\"color:red\">Red</span> face is <b>R</b>ight.<br>");
@@ -156,6 +161,8 @@ int main() {
   #if SCISSORS_ENABLED
   printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
+
+  char *filename = malloc(256 * sizeof(char));
 
   for (int l = 2; l <= max_length; ++l) {
     int length = l;
@@ -189,7 +196,14 @@ int main() {
       printf("</td>\n");
 
       printf("<td>\n");
+      #if SCISSORS_ENABLED
+      sprintf(filename, "txt/first_f2l_pair_scissors_%zu.txt", i);
+      #else
+      sprintf(filename, "txt/first_f2l_pair_%zu.txt", i);
+      #endif
+      printf("<a href=\"%s\">", filename);
       print_sequence(cases[i].solution);
+      printf("</a>");
       printf("</td>\n");
 
       printf("<td>\n");
@@ -220,6 +234,18 @@ int main() {
       printf("</td>\n");
 
       printf("</tr>\n");
+
+      collection solutions = nibble_solve_all(&tablebase, &cases[i].ldc);
+      FILE *fptr = fopen(filename, "w");
+      collection it = solutions;
+      while (*it != SENTINEL) {
+        fprint_sequence(fptr, *it);
+        fprintf(fptr, "\n");
+        it++;
+      }
+      fclose(fptr);
+
+      free(solutions);
     }
 
     printf("</table>\n");
@@ -230,6 +256,7 @@ int main() {
   printf("</body>\n");
   printf("</html>\n");
 
+  free(filename);
   free(cases);
 
   return EXIT_SUCCESS;

@@ -889,3 +889,17 @@ collection extend_collection(collection target, collection source) {
   target[new_size] = SENTINEL;
   return target;
 }
+
+collection empty_collection() {
+  collection result = malloc(sizeof(sequence));
+  result[0] = SENTINEL;
+  return result;
+}
+
+collection collection_push(collection target, sequence seq) {
+  size_t size = collection_size(target);
+  target = realloc(target, (size + 2) * sizeof(sequence));
+  target[size] = seq;
+  target[size + 1] = SENTINEL;
+  return target;
+}
