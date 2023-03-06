@@ -81,6 +81,11 @@ int main() {
   printf("</head>\n");
   printf("<body>\n");
   printf("<p>Shortest algorithms for solving the last F2L pair.</p>");
+  #if SCISSORS_ENABLED
+  printf("<p>There are also a list for the <a href=\"first-f2l-pair-scissors.html\">first pair</a>.</p>");
+  #else
+  printf("<p>There are also a list for the <a href=\"first-f2l-pair.html\">first pair</a>.</p>");
+  #endif
   printf("<p>");
   printf("<span style=\"color:lime\">Green</span> face is <b>F</b>ront.<br>");
   printf("<span style=\"color:orange\">Orange</span> face is <b>R</b>ight.<br>");
@@ -91,6 +96,8 @@ int main() {
   #if SCISSORS_ENABLED
   printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
+
+  char *filename = malloc(256 * sizeof(char));
 
   for (int l = 2; l <= max_length; ++l) {
     int length = l;
@@ -124,9 +131,34 @@ int main() {
       printf("</td>\n");
 
       printf("<td>\n");
+      #if SCISSORS_ENABLED
+      sprintf(filename, "txt/last_f2l_pair_scissors_%zu.txt", i);
+      #else
+      sprintf(filename, "txt/last_f2l_pair_%zu.txt", i);
+      #endif
+      printf("<a href=\"%s\">", filename);
       print_sequence(solutions[i]);
       printf("</td>\n");
+      printf("</a>");
       printf("</tr>\n");
+
+      collection extra = goalsphere_solve_all_stable(&sphere, cases + i, search_depth);
+      FILE *fptr = fopen(filename, "w");
+      collection it = extra;
+      while (*it != SENTINEL) {
+        collection expanded = expand_stable_sequence(*it);
+        collection eit = expanded;
+        while (*eit != SENTINEL) {
+          fprint_sequence(fptr, *eit);
+          fprintf(fptr, "\n");
+          eit++;
+        }
+        free(expanded);
+        it++;
+      }
+      fclose(fptr);
+
+      free(extra);
     }
 
     printf("</table>\n");
