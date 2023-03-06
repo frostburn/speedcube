@@ -196,6 +196,12 @@ int main() {
 
   LocDirCube root;
 
+  #if !SCISSORS_ENABLED
+  fprintf(stderr, "Enhancing the global goalsphere.\n");
+  locdir_reset(&root);
+  GLOBAL_SOLVER.goal = init_goalsphere(&root, 7, &locdir_centerless_hash);
+  #endif
+
   char *names[] = {
     "Aa",
     "Aa y",
@@ -441,9 +447,10 @@ int main() {
 
   LocDirCube ldc;
   sequence setup;
-  sequence *solutions;
-  sequence *candidate;
+  collection solutions;
+  collection candidate;
   sequence solution;
+  sequence stable_solution;
 
   printf("<html>\n");
   printf("<head>\n");
@@ -460,11 +467,15 @@ int main() {
   printf("</style>\n");
   printf("</head>\n");
   printf("<body>\n");
-  printf("<p>PLL (Permutation of the Last Layer) solves the cube after <a href=\"oll.html\">OLL</a>.</p>\n");
-  printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
-  printf("<p>Solutions obtained using IDA* are as short as possible, but not necessarily the easiest to perform.</p>\n");
   #if SCISSORS_ENABLED
-  printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
+  printf("<p>PLL (Permutation of the Last Layer) solves the cube after <a href=\"oll-scissors.html\">OLL</a>.</p>\n");
+  #else
+  printf("<p>PLL (Permutation of the Last Layer) solves the cube after <a href=\"oll.html\">OLL</a>.</p>\n");
+  #endif
+  printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
+  printf("<p>If there are two solutions listed the second one doesn't rotate the cube at the cost of some complexity.</p>\n");
+  #if SCISSORS_ENABLED
+  printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>\n");
   #endif
   printf("<table>\n");
 
@@ -586,6 +597,32 @@ int main() {
       }
       fprint_sequence(stderr, solution);
       fprintf(stderr, "\n%zu solutions found.\n", num_solutions);
+
+      bool print_stable = false;
+      if (is_stable(solution)) {
+        stable_solution = solution;
+      } else {
+        stable_solution = INVALID;
+        candidate = solutions;
+        while (*candidate != SENTINEL) {
+          if (is_better(*candidate, stable_solution) && is_stable(*candidate)) {
+            stable_solution = *candidate;
+          }
+          candidate++;
+        }
+        if (stable_solution == INVALID) {
+          fprintf(stderr, "No stable solutions, replacing slices...\n");
+          collection stable_solutions = global_solve_all_stable(&ldc);
+          candidate = stable_solutions;
+          while (*candidate != SENTINEL) {
+            stable_solution = is_better(stable_solution, *candidate) ? stable_solution : *candidate;
+            candidate++;
+          }
+          free(stable_solutions);
+          print_stable = true;
+        }
+      }
+
       printf("<td>\n");
       #if SCISSORS_ENABLED
       printf("<a href=\"txt/pll_scissors_%zu_%zu.txt\">\n", i, k);
@@ -594,9 +631,21 @@ int main() {
       #endif
       print_sequence(solution);
       printf("</a>\n");
+      if (solution != stable_solution || print_stable) {
+        printf("<br>\n");
+        if (print_stable) {
+          print_stable_sequence(stable_solution);
+        } else {
+          print_sequence(stable_solution);
+        }
+      }
       printf("</td>\n");
       printf("<td>%d</td>\n", sequence_length(solution));
-      printf("<td>%0.1f</td>\n", sequence_complexity(solution));
+      printf("<td>%0.1f\n", sequence_complexity(solution));
+      if (solution != stable_solution) {
+        printf("<br>%0.1f\n", sequence_complexity(stable_solution));
+      }
+      printf("</td>");
       printf("</tr>\n");
       #if SCISSORS_ENABLED
       sprintf(filename, "txt/pll_scissors_%zu_%zu.txt", i, k);

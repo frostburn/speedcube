@@ -106,20 +106,33 @@ void test_ida_star() {
 
   assert(sequence_length(solution) == 3);
 
-  sequence *solutions = ida_star_solve_all(&ida, &ldc, 0);
+  collection solutions = ida_star_solve_all_stable(&ida, &ldc, 0);
   size_t num_solutions = 0;
 
   sequence expected = parse("F U' F'");
   bool found = false;
-  while(*solutions != SENTINEL) {
-    assert(sequence_length(*solutions) == 3);
-    found = found || (*solutions == expected);
+  collection it = solutions;
+  while(*it != SENTINEL) {
+    assert(sequence_length(*it) == 3);
+    found = found || (*it == expected);
     num_solutions++;
-    solutions++;
+    it++;
   }
   assert(found);
 
-  assert(num_solutions == 8);
+  assert(num_solutions == 1);
+
+  free(solutions);
+}
+
+void test_sequence() {
+  sequence seq = parse("F U' F'");
+
+  collection variants = expand_stable_sequence(seq);
+
+  assert(collection_size(variants) == 8);
+
+  free(variants);
 }
 
 void test_locdir() {
@@ -495,6 +508,8 @@ int main() {
   test_locdir();
 
   test_ida_star();
+
+  test_sequence();
 
   test_hash_collisions();
 

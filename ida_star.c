@@ -217,26 +217,24 @@ sequence ida_to_sequence(IDAstar *ida) {
   return seq;
 }
 
-sequence* ida_star_search_all(IDAstar *ida, unsigned char so_far, unsigned char bound) {
-  LocDirCube aligned = ida->path[ida->path_length - 1];
-  locdir_realign(&aligned);
-  unsigned char to_go = (*ida->estimator)(&aligned);
+collection ida_star_search_all_stable(IDAstar *ida, unsigned char so_far, unsigned char bound) {
+  unsigned char to_go = (*ida->estimator)(ida->path + ida->path_length - 1);
   unsigned char lower_bound = so_far + to_go;
   if (lower_bound > bound) {
     return NULL;
   }
-  if (to_go == 0 && (*ida->is_solved)(&aligned)) {
-    sequence* result = malloc(2 * sizeof(sequence));
+  if (to_go == 0 && (*ida->is_solved)(ida->path + ida->path_length - 1)) {
+    collection result = malloc(2 * sizeof(sequence));
     result[0] = I;
     result[1] = SENTINEL;
     return result;
   }
   int min = UNKNOWN;
-  sequence* child_results[(NUM_MOVES - 1)];
+  collection child_results[NUM_STABLE_MOVES];
   size_t num_child_results = 0;
-  for (enum move move = U; move <= MAX_MOVE; ++move) {
+  for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
     ida->path[ida->path_length] = ida->path[ida->path_length - 1];
-    locdir_apply(ida->path + ida->path_length, move);
+    locdir_apply_stable(ida->path + ida->path_length, STABLE_MOVES[i]);
 
     bool in_path = false;
     for (size_t j = 0; j < ida->path_length; ++j) {
@@ -250,7 +248,7 @@ sequence* ida_star_search_all(IDAstar *ida, unsigned char so_far, unsigned char 
     }
 
     ida->path_length++;
-    sequence* child_result = ida_star_search_all(ida, so_far + 1, bound);
+    collection child_result = ida_star_search_all_stable(ida, so_far + 1, bound);
     if (child_result != NULL) {
       int child_length = sequence_length(child_result[0]);
       if (child_length > min) {
@@ -258,15 +256,15 @@ sequence* ida_star_search_all(IDAstar *ida, unsigned char so_far, unsigned char 
       }
       if (child_length < min) {
         min = child_length;
-        for (size_t i = 0; i < num_child_results; ++i) {
-          free(child_results[i]);
+        for (size_t k = 0; k < num_child_results; ++k) {
+          free(child_results[k]);
         }
         num_child_results = 0;
       }
       if (child_length <= min) {
-        sequence *it = child_result;
+        collection it = child_result;
         while (*it != SENTINEL) {
-          *it = concat(move, *it);
+          *it = concat(STABLE_MOVES[i], *it);
           it++;
         }
         child_results[num_child_results++] = child_result;
@@ -278,18 +276,14 @@ sequence* ida_star_search_all(IDAstar *ida, unsigned char so_far, unsigned char 
 
   size_t num_solutions = 0;
   for (size_t i = 0; i < num_child_results; ++i) {
-    sequence *it = child_results[i];
-    while (*it != SENTINEL) {
-      num_solutions++;
-      it++;
-    }
+    num_solutions += collection_size(child_results[i]);
   }
 
-  sequence *result = malloc((num_solutions+1) * sizeof(sequence));
+  collection result = malloc((num_solutions+1) * sizeof(sequence));
   num_solutions = 0;
 
   for (size_t i = 0; i < num_child_results; ++i) {
-    sequence *it = child_results[i];
+    collection it = child_results[i];
     while (*it != SENTINEL) {
       result[num_solutions++] = *it;
       it++;
@@ -301,11 +295,11 @@ sequence* ida_star_search_all(IDAstar *ida, unsigned char so_far, unsigned char 
   return result;
 }
 
-sequence* ida_star_solve_all(IDAstar *ida, LocDirCube *ldc, unsigned char lower_bound) {
+collection ida_star_solve_all_stable(IDAstar *ida, LocDirCube *ldc, unsigned char lower_bound) {
   // Obtain the correct bound iteratively
   ida_star_solve(ida, ldc, lower_bound);
 
   unsigned char bound = ida->path_length - 1;
   ida->path_length = 1;
-  return ida_star_search_all(ida, 0, bound);
+  return ida_star_search_all_stable(ida, 0, bound);
 }

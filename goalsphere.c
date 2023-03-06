@@ -76,7 +76,19 @@ unsigned char goalsphere_depth_(GoalSphere *sphere, size_t hash) {
 
 bool goalsphere_shell(GoalSphere *sphere, LocDirCube *ldc) {
   size_t last = sphere->num_sets - 1;
-  return set_has(sphere->sets[last], sphere->set_sizes[last], (*sphere->hash_func)(ldc));
+  if (set_has(sphere->sets[last], sphere->set_sizes[last], (*sphere->hash_func)(ldc))) {
+    // Double check to rule out hash collisions
+    size_t penultimate = sphere->num_sets - 2;
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
+      LocDirCube child = *ldc;
+      locdir_apply_stable(&child, STABLE_MOVES[i]);
+      if (set_has(sphere->sets[penultimate], sphere->set_sizes[penultimate], (*sphere->hash_func)(&child))) {
+        return true;
+      }
+    }
+    return false;
+  }
+  return false;
 }
 
 unsigned char goalsphere_depth(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
@@ -206,16 +218,12 @@ sequence goalsphere_solve(GoalSphere *sphere, LocDirCube *ldc, unsigned char sea
   return solve(search_depth);
 }
 
-const sequence SENTINEL = INVALID - 1;
-
-sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
+collection goalsphere_solve_all_stable(GoalSphere *sphere, LocDirCube *ldc, unsigned char search_depth) {
   if (sphere->num_sets < 1) {
     return NULL;
   }
-  LocDirCube aligned = *ldc;
-  locdir_realign(&aligned);
-  if (sphere->sets[0][0] == sphere->hash_func(&aligned)) {
-    sequence *result = malloc(2 * sizeof(sequence));
+  if (sphere->sets[0][0] == sphere->hash_func(ldc)) {
+    collection result = malloc(2 * sizeof(sequence));
     result[0] = I;
     result[1] = SENTINEL;
     return result;
@@ -224,14 +232,13 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
   path[0] = *ldc;
   size_t path_length = 1;
 
-  sequence* solve(unsigned char search_depth_) {
+  collection solve(unsigned char search_depth_) {
     unsigned char best_depth = UNKNOWN;
-    LocDirCube children[NUM_MOVES - 1];
-    bool best[NUM_MOVES - 1];
-    size_t i = 0;
-    for (enum move move = U; move <= MAX_MOVE; ++move) {
+    LocDirCube children[NUM_STABLE_MOVES];
+    bool best[NUM_STABLE_MOVES];
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
       children[i] = path[path_length - 1];
-      locdir_apply(children + i, move);
+      locdir_apply_stable(children + i, STABLE_MOVES[i]);
       bool in_path = false;
       for (size_t j = 0; j < path_length; ++j) {
         if (locdir_equals(children + i, path + j)) {
@@ -241,37 +248,31 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
       }
       if (in_path) {
         best[i] = false;
-        i++;
-        continue;
-      }
-      aligned = children[i];
-      locdir_realign(&aligned);
-      unsigned char depth = goalsphere_depth(sphere, &aligned, search_depth_);
-      if (depth < best_depth) {
-        best_depth = depth;
-        for (int idx = 0; idx < i; ++idx) {
-          best[idx] = false;
+      } else {
+        unsigned char depth = goalsphere_depth(sphere, children + i, search_depth_);
+        if (depth < best_depth) {
+          best_depth = depth;
+          for (int idx = 0; idx < i; ++idx) {
+            best[idx] = false;
+          }
         }
+        best[i] = (depth <= best_depth);
       }
-      best[i] = (depth <= best_depth);
-      i++;
     }
 
     if (best_depth == 0) {
       size_t num_solutions = 0;
-      for (i = 0; i < NUM_MOVES - 1; ++i) {
+      for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
         if (best[i]) {
           num_solutions++;
         }
       }
-      sequence *result = malloc((num_solutions + 1) * sizeof(sequence));
+      collection result = malloc((num_solutions + 1) * sizeof(sequence));
       num_solutions = 0;
-      i = 0;
-      for (enum move move = U; move <= MAX_MOVE; ++move) {
+      for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
         if (best[i]) {
-          result[num_solutions++] = move;
+          result[num_solutions++] = STABLE_MOVES[i];
         }
-        i++;
       }
       result[num_solutions] = SENTINEL;
       return result;
@@ -285,16 +286,15 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
       search_depth_--;
     }
     size_t num_best = 0;
-    for (i = 0; i < NUM_MOVES - 1; ++i) {
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
       if (best[i]) {
         num_best++;
       }
     }
-    sequence **child_results = malloc(num_best * sizeof(sequence*));
+    collection *child_results = malloc(num_best * sizeof(collection));
     num_best = 0;
     size_t num_solutions = 0;
-    i = 0;
-    for (enum move move = U; move <= MAX_MOVE; ++move) {
+    for (size_t i = 0; i < NUM_STABLE_MOVES; ++i) {
       if (best[i]) {
         path[path_length++] = children[i];
         child_results[num_best] = solve(search_depth_);
@@ -303,37 +303,34 @@ sequence* goalsphere_solve_all(GoalSphere *sphere, LocDirCube *ldc, unsigned cha
         // but maybe this is related to hash collisions.
         if (child_results[num_best] != NULL) {
           size_t j = 0;
-          for (;;) {
-            sequence solution = child_results[num_best][j];
-            if (solution == SENTINEL) {
-              break;
-            }
-            child_results[num_best][j++] = concat(move, solution);
+          collection it = child_results[num_best];
+          while (*it != SENTINEL) {
+            *it = concat(STABLE_MOVES[i], *it);
             num_solutions++;
+            it++;
           }
         }
         num_best++;
         path_length--;
       }
-      i++;
     }
     if (num_solutions == 0) {
+      for (size_t i = 0; i < num_best; ++i) {
+        free(child_results[i]);
+      }
       free(child_results);
       return NULL;
     }
-    sequence *result = malloc((num_solutions + 1) * sizeof(sequence));
+    collection result = malloc((num_solutions + 1) * sizeof(sequence));
     num_solutions = 0;
-    for (i = 0; i < num_best; ++i) {
+    for (size_t i = 0; i < num_best; ++i) {
       if (child_results[i] == NULL) {
         continue;
       }
-      size_t j = 0;
-      for (;;) {
-        sequence solution = child_results[i][j];
-        if (solution == SENTINEL) {
-          break;
-        }
-        result[num_solutions++] = child_results[i][j++];
+      collection it = child_results[i];
+      while (*it != SENTINEL) {
+        result[num_solutions++] = *it;
+        it++;
       }
       free(child_results[i]);
     }

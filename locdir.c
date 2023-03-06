@@ -1,7 +1,5 @@
 // Locations and directions/orientations of cubies
 
-#define ALTERNATIVE_HASH 0
-
 typedef struct {
   char corner_locs[8];
   char corner_dirs[8];
@@ -154,9 +152,44 @@ bool locdir_cross_solved(LocDirCube *ldc) {
   return true;
 }
 
+bool locdir_oll_solved(LocDirCube *ldc) {
+  // Bottom corners
+  for (int i = 0; i < 4; ++i) {
+    if (ldc->corner_locs[4 + i] != 4 + i) {
+      return false;
+    }
+    if (ldc->corner_dirs[4 + i] != 0) {
+      return false;
+    }
+  }
+  // F2L edges
+  for (int i = 0; i < 8; ++i) {
+    if (ldc->edge_locs[4 + i] != 4 + i) {
+      return false;
+    }
+    if (!ldc->edge_dirs[4 + i]) {
+      return false;
+    }
+  }
+  // Top corners
+  for (int i = 0; i < 4; ++i) {
+    if (ldc->corner_dirs[i] != 0) {
+      return false;
+    }
+  }
+  // Top edges
+  for (int i = 0; i < 4; ++i) {
+    if (!ldc->edge_dirs[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 size_t locdir_corner_index(LocDirCube *ldc) {
   size_t result = 0;
-  for (int i = 0; i < 8; ++i) {
+  // The location and orientation of the last corner can be determined given the rest
+  for (int i = 0; i < 7; ++i) {
     char loc = ldc->corner_locs[i];
     for (int j = i - 1; j >= 0; --j) {
       if (ldc->corner_locs[j] < ldc->corner_locs[i]) {
@@ -164,10 +197,7 @@ size_t locdir_corner_index(LocDirCube *ldc) {
       }
     }
     result = loc + result * (8 - i);
-    // The orientation of the last corner can be determined given the rest
-    if (i < 7) {
-      result = ldc->corner_dirs[i] + 3 * result;
-    }
+    result = ldc->corner_dirs[i] + 3 * result;
   }
   return result;
 }
@@ -193,7 +223,8 @@ const size_t LOCDIR_FOUR_CORNER_INDEX_SPACE = 8*7*6*5 * 3*3*3*3;
 
 size_t locdir_edge_index(LocDirCube *ldc) {
   size_t result = 0;
-  for (int i = 0; i < 12; ++i) {
+  // The location and orientation of the last edge can be determined given the rest
+  for (int i = 0; i < 11; ++i) {
     char loc = ldc->edge_locs[i];
     for (int j = i - 1; j >= 0; --j) {
       if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
@@ -201,10 +232,7 @@ size_t locdir_edge_index(LocDirCube *ldc) {
       }
     }
     result = loc + result * (12 - i);
-    // The orientation of the last edge can be determined given the rest
-    if (i < 11) {
-      result = ldc->edge_dirs[i] + 2 * result;
-    }
+    result = ldc->edge_dirs[i] + 2 * result;
   }
   return result;
 }
@@ -418,12 +446,26 @@ size_t locdir_f2l_index(LocDirCube *ldc) {
 
 const size_t LOCDIR_F2L_INDEX_SPACE = 12ULL*11*10*9 * 8*7*6*5 * 2*2*2*2 * 2*2*2*2 * 8*7*6*5 * 3*3*3*3;
 
+// NOTE: This overflows, so it's a hash, not an index
 size_t locdir_centerless_hash(LocDirCube *ldc) {
-  #if ALTERNATIVE_HASH
-  return locdir_edge_index(ldc) ^ (209194574107ULL * locdir_corner_index(ldc));
-  #else
-  return locdir_corner_index(ldc) ^ (18804110 * locdir_edge_index(ldc));
-  #endif
+  size_t result = locdir_corner_index(ldc);
+
+  // The location of the last two cubies can be determined given the corners
+  for (int i = 0; i < 10; ++i) {
+    char loc = ldc->edge_locs[i];
+    for (int j = i - 1; j >= 0; --j) {
+      if (ldc->edge_locs[j] < ldc->edge_locs[i]) {
+        loc--;
+      }
+    }
+    result = loc + result * (12 - i);
+    result = ldc->edge_dirs[i] + 2 * result;
+  }
+  // Second to last edge:
+  result = ldc->edge_dirs[10] + 2 * result;
+  // The orientation of the last edge can be determined given the rest
+
+  return result;
 }
 
 bitboard corner_to_bitboard(char loc, char dir) {
@@ -1114,6 +1156,7 @@ void locdir_S2(LocDirCube *ldc) {
 #endif
 
 // Slices re-interpreted as synchronized opposite side turns
+// i.e. E = D'U
 // Basically removes I, u, d, r, l, f and b.
 enum move STABLE_MOVES[] = {
   U, U_prime,
@@ -1150,8 +1193,54 @@ enum move STABLE_MOVES[] = {
   R2L, R2Lp, L2R, L2Rp,
 };
 
+void fprint_stable_sequence(FILE *file, sequence seq) {
+  if (seq == INVALID) {
+    fprintf(file, "<DNF>");
+    return;
+  }
+  sequence reversed = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  seq = reversed;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    enum move move = seq % NUM_MOVES;
+    if (move == M) {
+      fprintf(file, "[L'R] ");
+    } else if (move == M_prime) {
+      fprintf(file, "[R'L] ");
+    } else if (move == M2) {
+      fprintf(file, "[R2L2] ");
+    } else if (move == E) {
+      fprintf(file, "[D'U] ");
+    } else if (move == E_prime) {
+      fprintf(file, "[U'D] ");
+    } else if (move == E2) {
+      fprintf(file, "[U2D2] ");
+    } else if (move == S) {
+      fprintf(file, "[F'B] ");
+    } else if (move == S_prime) {
+      fprintf(file, "[B'F] ");
+    } else if (move == S2) {
+      fprintf(file, "[F2B2] ");
+    } else if (move != I) {
+      fprintf(file, "%s ", move_to_string(move));
+    }
+    seq /= NUM_MOVES;
+  }
+}
+
+void print_stable_sequence(sequence seq) {
+  fprint_stable_sequence(stdout, seq);
+  printf("\n");
+}
+
 void locdir_apply_stable(LocDirCube *ldc, enum move move) {
   switch (move) {
+    case I:
+      // I is not part of the stable set, but can appear in some contexts due to padding
+      break;
     case U:
       locdir_U(ldc);
       break;
@@ -1568,6 +1657,19 @@ void locdir_apply_sequence(LocDirCube *ldc, sequence seq) {
   }
 }
 
+void locdir_apply_stable_sequence(LocDirCube *ldc, sequence seq) {
+  sequence reversed = 0;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    reversed = reversed * NUM_MOVES + seq % NUM_MOVES;
+    seq /= NUM_MOVES;
+  }
+  seq = reversed;
+  for (int i = 0; i < SEQUENCE_MAX_LENGTH; ++i) {
+    locdir_apply_stable(ldc, seq % NUM_MOVES);
+    seq /= NUM_MOVES;
+  }
+}
+
 /* Rotate the cube so that the centers are in the standard position. */
 void locdir_realign(LocDirCube *ldc) {
   // Move white to the bottom
@@ -1719,4 +1821,61 @@ bool is_better_stable(sequence a, sequence b) {
   }
 
   return is_better_semistable(a, b);
+}
+
+bool is_stable(sequence seq) {
+  LocDirCube ldc;
+  locdir_reset(&ldc);
+  locdir_apply_sequence(&ldc, seq);
+  for (int i = 0; i < 6; ++i) {
+    if (ldc.center_locs[i] != i) {
+      return false;
+    }
+  }
+  return true;
+}
+
+collection expand_stable_sequence_(sequence seq, LocDirCube *stable_, LocDirCube *unstable) {
+  enum move stable_move = seq % NUM_MOVES;
+
+  collection results;
+  if (!stable_move) {
+    results = malloc(2 * sizeof(sequence));
+    results[0] = I;
+    results[1] = SENTINEL;
+    return results;
+  }
+
+  seq /= NUM_MOVES;
+
+  LocDirCube stable = *stable_;
+  locdir_apply_stable(&stable, stable_move);
+
+  results = malloc(sizeof(sequence));
+  results[0] = SENTINEL;
+  for (enum move move = U; move <= MAX_MOVE; ++move) {
+    LocDirCube child = *unstable;
+    locdir_apply(&child, move);
+    LocDirCube aligned = child;
+    locdir_realign(&aligned);
+    if (locdir_equals(&stable, &aligned)) {
+      collection variants = expand_stable_sequence_(seq, &stable, &child);
+      collection it = variants;
+      while (*it != SENTINEL) {
+        *it = concat(move, *it);
+        it++;
+      }
+      results = extend_collection(results, variants);
+      free(variants);
+    }
+  }
+  return results;
+}
+
+collection expand_stable_sequence(sequence seq) {
+  LocDirCube stable;
+  locdir_reset(&stable);
+  LocDirCube unstable = stable;
+
+  return expand_stable_sequence_(reverse(seq), &stable, &unstable);
 }

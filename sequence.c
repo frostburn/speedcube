@@ -2,6 +2,8 @@
 
 typedef unsigned __int128 sequence;
 
+typedef sequence* collection;
+
 #if SCISSORS_ENABLED
 #define SEQUENCE_MAX_LENGTH (21)
 #else
@@ -12,6 +14,7 @@ typedef unsigned __int128 sequence;
 
 const sequence NOTHING = 0;
 const sequence INVALID = ~NOTHING;
+const sequence SENTINEL = INVALID - 1;
 
 sequence from_moves(enum move *moves) {
   sequence result = 0;
@@ -822,7 +825,6 @@ enum move FACE_TURNS[] = {
   B, B_prime, B2,
 };
 
-// TODO: Fix! This produced F L2 R' R' D2 R' D2 L' F' with R' repeated.
 sequence make_scramble(Cube *root, int length) {
   if (length > SEQUENCE_MAX_LENGTH) {
     fprintf(stderr, "Desired sramble length too long");
@@ -865,4 +867,25 @@ sequence make_scramble(Cube *root, int length) {
     index++;
   }
   return result;
+}
+
+size_t collection_size(collection col) {
+  size_t result = 0;
+  while (*col != SENTINEL) {
+    result++;
+    col++;
+  }
+  return result;
+}
+
+collection extend_collection(collection target, collection source) {
+  size_t old_size = collection_size(target);
+  size_t new_size = old_size + collection_size(source);
+  target = realloc(target, (new_size + 1) * sizeof(sequence));
+  while (*source != SENTINEL) {
+    target[old_size++] = *source;
+    source++;
+  }
+  target[new_size] = SENTINEL;
+  return target;
 }
