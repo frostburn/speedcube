@@ -176,86 +176,6 @@ void pll_solutions() {
   free_global_solver();
 }
 
-void cross_trainer() {
-  Nibblebase tablebase = init_nibblebase(LOCDIR_CROSS_INDEX_SPACE, &locdir_cross_index);
-  LocDirCube ldc;
-  locdir_reset_cross(&ldc);
-  populate_nibblebase(&tablebase, &ldc);
-
-  Cube cube;
-
-  for (;;) {
-    locdir_reset_cross(&ldc);
-    cube = to_cube(&ldc);
-    sequence s = make_scramble(&cube, 8 + rand() % 4);
-    locdir_apply_sequence(&ldc, s);
-    unsigned char depth = nibble_depth(&tablebase, &ldc);
-
-    printf("Solve in %d moves\n", depth);
-    print_sequence(s);
-    Cube cube = to_cube(&ldc);
-    render(&cube);
-
-    while (getchar() != '\n');
-    locdir_reset(&ldc);
-    locdir_apply_sequence(&ldc, s);
-    sequence solution = nibble_solve(&tablebase, &ldc, &is_better_semistable);
-    print_sequence(solution);
-    printf("\n");
-  }
-}
-
-
-void xcross_trainer() {
-  FILE *fptr;
-  size_t num_read;
-  size_t tablebase_size;
-
-  fprintf(stderr, "Loading tablebase for xcross.\n");
-  Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
-  #if SCISSORS_ENABLED
-  fptr = fopen("./tables/xcross_scissors.bin", "rb");
-  #else
-  fptr = fopen("./tables/xcross.bin", "rb");
-  #endif
-  if (fptr == NULL) {
-    fprintf(stderr, "Failed to open file.\n");
-    exit(EXIT_FAILURE);
-  }
-  tablebase_size = (LOCDIR_XCROSS_INDEX_SPACE + 1)/2;
-  num_read = fread(tablebase.octets, sizeof(unsigned char), tablebase_size, fptr);
-  if (num_read != tablebase_size) {
-    fprintf(stderr, "Failed to load data. Only %zu of %zu read.\n", num_read, tablebase_size);
-    exit(EXIT_FAILURE);
-  }
-  fclose(fptr);
-
-  LocDirCube ldc;
-  Cube cube;
-
-  for (;;) {
-    locdir_reset_xcross(&ldc);
-    cube = to_cube(&ldc);
-    sequence s = make_scramble(&cube, 9 + rand() % 5);
-    locdir_apply_sequence(&ldc, s);
-    unsigned char depth = nibble_depth(&tablebase, &ldc);
-
-    printf("Solve in %d moves\n", depth);
-    print_sequence(s);
-    Cube cube = to_cube(&ldc);
-    render(&cube);
-
-    while (getchar() != '\n');
-    locdir_reset(&ldc);
-    locdir_apply_sequence(&ldc, s);
-    sequence solution = nibble_solve(&tablebase, &ldc, &is_better_semistable);
-    print_sequence(solution);
-    printf("\n");
-  }
-
-  free_nibblebase(&tablebase);
-}
-
 void cross_stats() {
   Nibblebase tablebase = init_nibblebase(LOCDIR_CROSS_INDEX_SPACE, &locdir_cross_index);
   LocDirCube ldc;
@@ -828,10 +748,6 @@ int main() {
   // pll_solutions();
 
   // oll_solutions();
-
-  // cross_trainer();
-
-  // xcross_trainer();
 
   xcross_stats();
 

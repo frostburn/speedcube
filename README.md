@@ -48,6 +48,17 @@ Compile the various tables used by the solvers.
 gcc tabulate.c -lm -Ofast -o tabulate.out && ./tabulate.out
 ```
 
+## CLI Trainers
+You can practice against the optimal solutions with the cross and x-cross trainers.
+```bash
+gcc cross_trainer.c -lm -Ofast -o cross-trainer.out
+./cross-trainer.out
+```
+```bash
+gcc xcross_trainer.c -lm -Ofast -o xcross-trainer.out
+./xcross-trainer.out
+```
+
 ## HTML generation
 First F2L pair
 ```bash
