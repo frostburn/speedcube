@@ -61,7 +61,7 @@ void prepare_global_solver() {
 
   fprintf(stderr, "Loading tablebase for first 7 edges.\n");
   GLOBAL_SOLVER.first = init_nibblebase(LOCDIR_FIRST_7_EDGE_INDEX_SPACE, &locdir_first_7_edge_index);
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   fptr = fopen("./tables/first_7_edges_scissors.bin", "rb");
   #else
   fptr = fopen("./tables/first_7_edges.bin", "rb");
@@ -80,7 +80,7 @@ void prepare_global_solver() {
 
   fprintf(stderr ,"Loading tablebase for last 7 edges.\n");
   GLOBAL_SOLVER.last = init_nibblebase(LOCDIR_LAST_7_EDGE_INDEX_SPACE, &locdir_last_7_edge_index);
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   fptr = fopen("./tables/last_7_edges_scissors.bin", "rb");
   #else
   fptr = fopen("./tables/last_7_edges.bin", "rb");
@@ -99,7 +99,7 @@ void prepare_global_solver() {
 
   fprintf(stderr, "Loading tablebase for the corners.\n");
   GLOBAL_SOLVER.corners = init_nibblebase(LOCDIR_CORNER_INDEX_SPACE, &locdir_corner_index);
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   fptr = fopen("./tables/corners_scissors.bin", "rb");
   #else
   fptr = fopen("./tables/corners.bin", "rb");
@@ -122,7 +122,7 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.goal.sets = malloc(GLOBAL_SOLVER.goal.num_sets * sizeof(size_t*));
   GLOBAL_SOLVER.goal.set_sizes = malloc(GLOBAL_SOLVER.goal.num_sets * sizeof(size_t));
   GLOBAL_SOLVER.goal.set_sizes[0] = 1;
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   GLOBAL_SOLVER.goal.set_sizes[1] = 45;
   GLOBAL_SOLVER.goal.set_sizes[2] = 1347;
   GLOBAL_SOLVER.goal.set_sizes[3] = 39631;
@@ -159,7 +159,7 @@ void prepare_global_solver() {
   GLOBAL_SOLVER.edge_goal.sets = malloc(GLOBAL_SOLVER.edge_goal.num_sets * sizeof(size_t*));
   GLOBAL_SOLVER.edge_goal.set_sizes = malloc(GLOBAL_SOLVER.edge_goal.num_sets * sizeof(size_t));
   GLOBAL_SOLVER.edge_goal.set_sizes[0] = 1;
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   GLOBAL_SOLVER.edge_goal.set_sizes[1] = 45;
   GLOBAL_SOLVER.edge_goal.set_sizes[2] = 1347;
   GLOBAL_SOLVER.edge_goal.set_sizes[3] = 39471;

@@ -196,8 +196,9 @@ int main() {
 
   LocDirCube root;
 
-  #if !SCISSORS_ENABLED
+  #ifndef SCISSORS_ENABLED
   fprintf(stderr, "Enhancing the global goalsphere.\n");
+  free_goalsphere(&GLOBAL_SOLVER.goal);
   locdir_reset(&root);
   GLOBAL_SOLVER.goal = init_goalsphere(&root, 7, &locdir_centerless_hash);
   #endif
@@ -454,7 +455,7 @@ int main() {
 
   printf("<html>\n");
   printf("<head>\n");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<title>Shortest PLL algorithms (scissor turn metric)</title>\n");
   #else
   printf("<title>Shortest PLL algorithms (slice turn metric)</title>\n");
@@ -467,14 +468,14 @@ int main() {
   printf("</style>\n");
   printf("</head>\n");
   printf("<body>\n");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<p>PLL (Permutation of the Last Layer) solves the cube after <a href=\"oll-scissors.html\">OLL</a>.</p>\n");
   #else
   printf("<p>PLL (Permutation of the Last Layer) solves the cube after <a href=\"oll.html\">OLL</a>.</p>\n");
   #endif
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
   printf("<p>If there are two solutions listed the second one doesn't rotate the cube at the cost of some complexity.</p>\n");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>\n");
   #endif
   printf("<table>\n");
@@ -624,7 +625,7 @@ int main() {
       }
 
       printf("<td>\n");
-      #if SCISSORS_ENABLED
+      #ifdef SCISSORS_ENABLED
       printf("<a href=\"txt/pll_scissors_%zu_%zu.txt\">\n", i, k);
       #else
       printf("<a href=\"txt/pll_%zu_%zu.txt\">\n", i, k);
@@ -647,7 +648,7 @@ int main() {
       }
       printf("</td>");
       printf("</tr>\n");
-      #if SCISSORS_ENABLED
+      #ifdef SCISSORS_ENABLED
       sprintf(filename, "txt/pll_scissors_%zu_%zu.txt", i, k);
       #else
       sprintf(filename, "txt/pll_%zu_%zu.txt", i, k);

@@ -1,6 +1,4 @@
-#define SCISSORS_ENABLED 1
-
-#if SCISSORS_ENABLED
+#ifdef SCISSORS_ENABLED
 #define NUM_MOVES (64)
 #else
 #define NUM_MOVES (46)
@@ -51,7 +49,7 @@ enum move {
   R2L, R2Lp, L2R, L2Rp,
 };
 
-#if SCISSORS_ENABLED
+#ifdef SCISSORS_ENABLED
 const enum move MAX_MOVE = L2Rp;
 #else
 const enum move MAX_MOVE = b2;

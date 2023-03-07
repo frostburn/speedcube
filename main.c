@@ -316,7 +316,7 @@ void xcross_stats() {
 
   fprintf(stderr, "Loading tablebase for xcross.\n");
   Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   fptr = fopen("./tables/xcross_scissors.bin", "rb");
   #else
   fptr = fopen("./tables/xcross.bin", "rb");
@@ -665,7 +665,7 @@ void solve_f2l_pair() {
 
   fprintf(stderr, "Loading tablebase for xcross.\n");
   Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   fptr = fopen("./tables/xcross_scissors.bin", "rb");
   #else
   fptr = fopen("./tables/xcross.bin", "rb");
@@ -746,8 +746,6 @@ int main() {
   // solve_3x3x3();
 
   // pll_solutions();
-
-  // oll_solutions();
 
   xcross_stats();
 

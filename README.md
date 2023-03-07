@@ -77,8 +77,11 @@ PLL
 gcc pll_html.c -lm -Ofast -o pll.out && ./pll.out > pll.html
 ```
 
+## Enabling scissor moves
+To count move combinations like `[FB]` as one move compile the files with the flag `-DSCISSORS_ENABLED`.
+
 ## Code quality issues
-This is a hobbyist's throw-away project which is evident from the lack of a build system. To turn off scissor moves you need to edit `moves.c`.
+This is a hobbyist's throw-away project which is evident from the lack of a build system.
 
 ## Inspired by
 Benjamin Botto's [Medium article](https://medium.com/@benjamin.botto/implementing-an-optimal-rubiks-cube-solver-using-korf-s-algorithm-bf750b332cf9) and [bot](https://github.com/benbotto/rubiks-cube-cracker).

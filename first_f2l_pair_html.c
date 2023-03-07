@@ -72,7 +72,7 @@ int main() {
 
   fprintf(stderr, "Loading tablebase for xcross.\n");
   Nibblebase tablebase = init_nibblebase(LOCDIR_XCROSS_INDEX_SPACE, &locdir_xcross_index);
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   fptr = fopen("./tables/xcross_scissors.bin", "rb");
   #else
   fptr = fopen("./tables/xcross.bin", "rb");
@@ -132,7 +132,7 @@ int main() {
 
   printf("<html>\n");
   printf("<head>\n");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<title>Shortest F2L algorithms (first pair, scissor turn metric)</title>\n");
   #else
   printf("<title>Shortest F2L algorithms (first pair, slice turn metric)</title>\n");
@@ -146,7 +146,7 @@ int main() {
   printf("</head>\n");
   printf("<body>\n");
   printf("<p>Shortest algorithms for solving the first F2L pair.</p>");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<p>There are also a list for the <a href=\"last-f2l-pair-scissors.html\">last pair</a>.</p>");
   #else
   printf("<p>There are also a list for the <a href=\"last-f2l-pair.html\">last pair</a>.</p>");
@@ -158,7 +158,7 @@ int main() {
   printf("<span style=\"color:lime\">Green</span> face is <b>B</b>ack.<br>");
   printf("<span style=\"color:orange\">Orange</span> face is <b>L</b>eft.<br>");
   printf("White face is <b>D</b>own.</p>");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
 
@@ -196,7 +196,7 @@ int main() {
       printf("</td>\n");
 
       printf("<td>\n");
-      #if SCISSORS_ENABLED
+      #ifdef SCISSORS_ENABLED
       sprintf(filename, "txt/first_f2l_pair_scissors_%zu.txt", i);
       #else
       sprintf(filename, "txt/first_f2l_pair_%zu.txt", i);

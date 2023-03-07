@@ -4,7 +4,7 @@ typedef unsigned __int128 sequence;
 
 typedef sequence* collection;
 
-#if SCISSORS_ENABLED
+#ifdef SCISSORS_ENABLED
 #define SEQUENCE_MAX_LENGTH (21)
 #else
 #define SEQUENCE_MAX_LENGTH (23)
