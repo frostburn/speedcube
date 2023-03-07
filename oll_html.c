@@ -54,7 +54,7 @@ void oll_svg(Cube *cube) {
 }
 
 int main() {
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   size_t radius = 6;
   size_t search_depth = 4;
   #else
@@ -192,7 +192,7 @@ int main() {
 
   printf("<html>\n");
   printf("<head>\n");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<title>Shortest OLL algorithms (scissor turn metric)</title>\n");
   #else
   printf("<title>Shortest OLL algorithms (slice turn metric)</title>\n");
@@ -206,14 +206,14 @@ int main() {
   printf("</head>\n");
   printf("<body>\n");
   printf("<p>OLL (Orientation of the Last Layer) solves the top color of the last layer.</p>\n");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<p>Next step: <a href=\"pll-scissors.html\">PLL</a></p>\n");
   #else
   printf("<p>Next step: <a href=\"pll.html\">PLL</a></p>\n");
   #endif
   printf("<p>Shortest STM solutions discovered by <a href=\"https://github.com/frostburn/speedcube\">frostburn/speedcube</a>.</p>\n");
   printf("<p>If there are two solutions listed the second one doesn't rotate the cube at the cost of some complexity.</p>\n");
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   printf("<p>Scissor moves [in square brackets] can in principle be performed in one single motion.</p>");
   #endif
   printf("<table>\n");
@@ -336,7 +336,7 @@ int main() {
       oll_svg(cubes + j);
       printf("</td>\n");
       printf("<td>\n");
-      #if SCISSORS_ENABLED
+      #ifdef SCISSORS_ENABLED
       printf("<a href=\"txt/oll_scissors_%zu_%zu.txt\">\n", i, j);
       #else
       printf("<a href=\"txt/oll_%zu_%zu.txt\">\n", i, j);
@@ -360,7 +360,7 @@ int main() {
       printf("</td>");
       printf("</tr>\n");
 
-      #if SCISSORS_ENABLED
+      #ifdef SCISSORS_ENABLED
       sprintf(filename, "txt/oll_scissors_%zu_%zu.txt", i, j);
       #else
       sprintf(filename, "txt/oll_%zu_%zu.txt", i, j);

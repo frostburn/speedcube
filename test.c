@@ -288,7 +288,7 @@ void test_locdir() {
     }
   }
 
-  #if SCISSORS_ENABLED
+  #ifdef SCISSORS_ENABLED
   assert(num_unique == 34);
   #else
   assert(num_unique == 22);

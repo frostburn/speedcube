@@ -1149,7 +1149,7 @@ void locdir_S2(LocDirCube *ldc) {
   locdir_y(ldc);
 }
 
-#if SCISSORS_ENABLED
+#ifdef SCISSORS_ENABLED
 #define NUM_STABLE_MOVES (45)
 #else
 #define NUM_STABLE_MOVES (27)
