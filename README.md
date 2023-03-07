@@ -25,6 +25,11 @@ Orientation of the last layer: [OLL](https://frostburn.github.io/oll-scissors.ht
 
 Permutation of the last layer: [PLL](https://frostburn.github.io/pll-scissors.html)
 
+### Manual compilations
+[2-Look OLL](https://frostburn.github.io/2look-oll.html)
+
+[2-Look PLL](https://frostburn.github.io/2look-pll.html)
+
 ## Solvers
  * `Nibblebase`: Tablebase of complete solutions to small subproblems where move count < 16 (a nibble).
  * `GoalSphere`: Lookup table of solutions up to a specified depth for problems too large to enumerate exhaustively.
