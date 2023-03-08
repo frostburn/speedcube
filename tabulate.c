@@ -265,7 +265,10 @@ void create_oll_sphere() {
 
 int main() {
   #ifdef SCISSORS_ENABLED
-  printf("Scissor moves enabled.\n");
+    printf("Scissor moves enabled.\n");
+    #ifdef ALTERNATIVE_SCISSORS
+      printf("Using alternative scissor implementations.\n");
+    #endif
   #endif
 
   create_xcross_tablebase();

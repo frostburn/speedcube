@@ -197,6 +197,24 @@ sequence invert(sequence seq) {
       case RpLp:
         move = RL;
         break;
+      #ifdef ALTERNATIVE_SCISSORS
+      case R2L:  // [M'R']
+        result = result * NUM_MOVES + M;
+        move = R;
+        break;
+      case R2Lp:  // [M2L]
+        result = result * NUM_MOVES + M2;
+        move = L_prime;
+        break;
+      case L2R:  // [M2R']
+        result = result * NUM_MOVES + M2;
+        move = R;
+        break;
+      case L2Rp:  // [M'L]
+        result = result * NUM_MOVES + M;
+        move = L_prime;
+        break;
+      #else
       case R2L:
         move = R2Lp;
         break;
@@ -209,6 +227,7 @@ sequence invert(sequence seq) {
       case L2Rp:
         move = L2R;
         break;
+      #endif
     }
     if (move != I) {
       result = result * NUM_MOVES + move;
@@ -327,6 +346,41 @@ const char* move_to_string(enum move move) {
       return "[UD]";
     case UpDp:
       return "[U'D']";
+    case FB:
+      return "[FB]";
+    case FpBp:
+      return "[F'B']";
+    case RL:
+      return "[RL]";
+    case RpLp:
+      return "[R'L']";
+
+    #ifdef ALTERNATIVE_SCISSORS
+    case U2D:
+      return "[U'E']";
+    case U2Dp:
+      return "[UE]";
+    case D2U:
+      return "[D'E]";
+    case D2Up:
+      return "[E'D]";
+    case F2B:
+      return "[F'S]";
+    case F2Bp:
+      return "[S'F]";
+    case B2F:
+      return "[B'S']";
+    case B2Fp:
+      return "[BS]";
+    case R2L:
+      return "[M'L]";
+    case R2Lp:
+      return "[M2L]";
+    case L2R:
+      return "[M2R']";
+    case L2Rp:
+      return "[M'L]";
+    #else
     case U2D:
       return "[U2D]";
     case U2Dp:
@@ -335,10 +389,6 @@ const char* move_to_string(enum move move) {
       return "[D2U]";
     case D2Up:
       return "[D2U']";
-    case FB:
-      return "[FB]";
-    case FpBp:
-      return "[F'B']";
     case F2B:
       return "[F2B]";
     case F2Bp:
@@ -347,10 +397,6 @@ const char* move_to_string(enum move move) {
       return "[B2F]";
     case B2Fp:
       return "[B2F']";
-    case RL:
-      return "[RL]";
-    case RpLp:
-      return "[R'L']";
     case R2L:
       return "[R2L]";
     case R2Lp:
@@ -359,6 +405,7 @@ const char* move_to_string(enum move move) {
       return "[L2R]";
     case L2Rp:
       return "[L2R']";
+    #endif
     case I:
       return "";
     default:
@@ -436,6 +483,64 @@ bool is_better(sequence a, sequence b) {
   return lexicographic;
 }
 
+#if ALTERNATIVE_SCISSORS
+int semistable_score(enum move move) {
+  switch(move) {
+    case I:
+      return 0;
+    case U:
+      return 1;
+    case U_prime:
+      return 2;
+    case R:
+      return 3;
+    case R_prime:
+      return 4;
+    case F:
+      return 5;
+    case F_prime:
+      return 6;
+    case D:
+      return 7;
+    case D_prime:
+      return 8;
+    case L:
+      return 9;
+    case L_prime:
+      return 10;
+    case B:
+      return 11;
+    case B_prime:
+      return 12;
+    case UD:
+      return 13;
+    case UpDp:
+      return 14;
+    case FB:
+      return 15;
+    case FpBp:
+      return 16;
+    case RL:
+      return 17;
+    case RpLp:
+      return 18;
+    case U2:
+      return 19;
+    case R2:
+      return 20;
+    case F2:
+      return 21;
+    case D2:
+      return 22;
+    case L2:
+      return 23;
+    case B2:
+      return 24;
+    default:
+      return 25 + move;
+  }
+}
+#else
 int semistable_score(enum move move) {
   switch(move) {
     case I:
@@ -534,6 +639,7 @@ int semistable_score(enum move move) {
       return 45 + move;
   }
 }
+#endif
 
 bool is_better_semistable(sequence a, sequence b) {
   if (a == INVALID) {

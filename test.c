@@ -135,6 +135,109 @@ void test_sequence() {
   free(variants);
 }
 
+void test_scissor_alternatives() {
+  LocDirCube ldc180;
+  LocDirCube ldc90;
+
+  void r() {
+    locdir_reset(&ldc180);
+    locdir_reset(&ldc90);
+  }
+
+  void t() {
+    locdir_realign(&ldc90);
+    assert(locdir_equals(&ldc180, &ldc90));
+  }
+
+  r();  // [L2R] ~ [M2R']
+  locdir_L2(&ldc180);
+  locdir_R(&ldc180);
+
+  locdir_M2(&ldc90);
+  locdir_R_prime(&ldc90);
+
+  t(); r();  // [L2R'] ~ [M'L]
+  locdir_L2(&ldc180);
+  locdir_R_prime(&ldc180);
+
+  locdir_M_prime(&ldc90);
+  locdir_L(&ldc90);
+
+  t(); r();  // [R2L] ~ [M'R']
+  locdir_R2(&ldc180);
+  locdir_L(&ldc180);
+
+  locdir_M_prime(&ldc90);
+  locdir_R_prime(&ldc90);
+
+  t(); r();  // [R2L'] ~ [M2L]
+  locdir_R2(&ldc180);
+  locdir_L_prime(&ldc180);
+
+  locdir_M2(&ldc90);
+  locdir_L(&ldc90);
+
+
+  t(); r();  // [D2U] ~ [D'E]
+  locdir_D2(&ldc180);
+  locdir_U(&ldc180);
+
+  locdir_D_prime(&ldc90);
+  locdir_E(&ldc90);
+
+  t(); r();  // [D2U'] ~ [E'D]
+  locdir_D2(&ldc180);
+  locdir_U_prime(&ldc180);
+
+  locdir_E_prime(&ldc90);
+  locdir_D(&ldc90);
+
+  t(); r();  // [U2D'] ~ [UE]
+  locdir_U2(&ldc180);
+  locdir_D_prime(&ldc180);
+
+  locdir_U(&ldc90);
+  locdir_E(&ldc90);
+
+  t(); r();  // [U2D] ~ [U'E']
+  locdir_U2(&ldc180);
+  locdir_D(&ldc180);
+
+  locdir_U_prime(&ldc90);
+  locdir_E_prime(&ldc90);
+
+
+  t(); r();  // [F2B'] ~ [S'F]
+  locdir_F2(&ldc180);
+  locdir_B_prime(&ldc180);
+
+  locdir_S_prime(&ldc90);
+  locdir_F(&ldc90);
+
+  t(); r();  // [F2B] ~ [F'S]
+  locdir_F2(&ldc180);
+  locdir_B(&ldc180);
+
+  locdir_F_prime(&ldc90);
+  locdir_S(&ldc90);
+
+  t(); r();  // [B2F'] ~ [BS]
+  locdir_B2(&ldc180);
+  locdir_F_prime(&ldc180);
+
+  locdir_B(&ldc90);
+  locdir_S(&ldc90);
+
+  t(); r();  // [B2F] ~ [B'S']
+  locdir_B2(&ldc180);
+  locdir_F(&ldc180);
+
+  locdir_B_prime(&ldc90);
+  locdir_S_prime(&ldc90);
+
+  t();
+}
+
 void test_locdir() {
   LocDirCube ldc;
 
@@ -429,6 +532,12 @@ int main() {
     int length = 1 + (rand() % SEQUENCE_MAX_LENGTH);
     for (int j = 0; j < length; ++j) {
       enum move move = rand() % NUM_MOVES;
+      #ifdef ALTERNATIVE_SCISSORS
+      // Alternative scissors don't have elementary inverses
+      if (move == R2L || move == R2Lp || move == L2R || move == L2Rp) {
+        j++;
+      }
+      #endif
       apply(&reference, move);
       seq = NUM_MOVES * seq + move;
     }
@@ -436,7 +545,7 @@ int main() {
     cube = test_cube();
     apply_sequence(&cube, seq);
     assert(equals(&cube, &reference));
-    // render(&cube);
+    render(&cube);
     apply_sequence(&cube, invert(seq));
     assert(cube.a == 12009600080063147ULL);
     assert(cube.b == 15440913008127414ULL);
@@ -511,7 +620,9 @@ int main() {
 
   test_sequence();
 
-  test_hash_collisions();
+  test_scissor_alternatives();
+
+  // test_hash_collisions();
 
   return EXIT_SUCCESS;
 }

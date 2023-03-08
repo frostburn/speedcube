@@ -5,6 +5,64 @@
 #endif
 
 // In priority order
+#ifdef ALTERNATIVE_SCISSORS
+// The point of alternatives is to avoid double turns so they're ranked lower here
+enum move {
+  I,
+
+  U, U_prime,
+  R, R_prime,
+
+  M_prime,
+
+  F, F_prime,
+
+  r, r_prime,
+  u, u_prime,
+  f, f_prime,
+
+  D, D_prime,
+
+  L, L_prime,
+
+  l, l_prime,
+  d, d_prime,
+
+  B, B_prime,
+
+  UD, UpDp,
+  FB, FpBp,
+
+  U2D, U2Dp, D2U, D2Up,
+  F2B, F2Bp,
+  R2L, L2Rp,
+
+  b, b_prime,
+
+  B2F, B2Fp,
+
+  M,
+
+  RL, RpLp,
+
+  E, E_prime,
+
+  S, S_prime,
+
+  M2,
+  R2Lp, L2R,
+
+  U2, R2,
+  F2,
+  r2, u2, f2,
+  D2, L2,
+  l2, d2,
+  B2,
+  b2,
+  E2,
+  S2,
+};
+#else
 enum move {
   I,
 
@@ -48,11 +106,17 @@ enum move {
   RL, RpLp,
   R2L, R2Lp, L2R, L2Rp,
 };
+#endif
+
 
 #ifdef SCISSORS_ENABLED
-const enum move MAX_MOVE = L2Rp;
+  #ifdef ALTERNATIVE_SCISSORS
+    const enum move MAX_MOVE = S2;
+  #else
+    const enum move MAX_MOVE = L2Rp;
+  #endif
 #else
-const enum move MAX_MOVE = b2;
+  const enum move MAX_MOVE = b2;
 #endif
 
 /* Bitboard masks */
@@ -696,6 +760,72 @@ void apply(Cube *cube, enum move move) {
       turn_U_prime(cube);
       turn_D_prime(cube);
       break;
+    case FB:
+      turn_F(cube);
+      turn_B(cube);
+      break;
+    case FpBp:
+      turn_F_prime(cube);
+      turn_B_prime(cube);
+      break;
+    case RL:
+      turn_R(cube);
+      turn_L(cube);
+      break;
+    case RpLp:
+      turn_R_prime(cube);
+      turn_L_prime(cube);
+      break;
+    #ifdef ALTERNATIVE_SCISSORS
+    case U2D:
+      turn_U_prime(cube);
+      slice_E_prime(cube);
+      break;
+    case U2Dp:
+      turn_U(cube);
+      slice_E(cube);
+      break;
+    case D2U:
+      turn_D_prime(cube);
+      slice_E(cube);
+      break;
+    case D2Up:
+      slice_E_prime(cube);
+      turn_D(cube);
+      break;
+    case F2B:
+      turn_F_prime(cube);
+      slice_S(cube);
+      break;
+    case F2Bp:
+      slice_S_prime(cube);
+      turn_F(cube);
+      break;
+    case B2F:
+      turn_B_prime(cube);
+      slice_S_prime(cube);
+      break;
+    case B2Fp:
+      turn_B(cube);
+      slice_S(cube);
+      break;
+    case R2L:
+      slice_M_prime(cube);
+      turn_R_prime(cube);
+      break;
+    case R2Lp:
+      slice_M2(cube);
+      turn_L(cube);
+      break;
+    case L2R:
+      slice_M2(cube);
+      turn_R_prime(cube);
+      break;
+    case L2Rp:
+      slice_M_prime(cube);
+      turn_L(cube);
+      break;
+    #else
     case U2D:
       turn_U2(cube);
       turn_D(cube);
@@ -711,14 +841,6 @@ void apply(Cube *cube, enum move move) {
     case D2Up:
       turn_D2(cube);
       turn_U_prime(cube);
-      break;
-    case FB:
-      turn_F(cube);
-      turn_B(cube);
-      break;
-    case FpBp:
-      turn_F_prime(cube);
-      turn_B_prime(cube);
       break;
     case F2B:
       turn_F2(cube);
@@ -736,14 +858,6 @@ void apply(Cube *cube, enum move move) {
       turn_B2(cube);
       turn_F_prime(cube);
       break;
-    case RL:
-      turn_R(cube);
-      turn_L(cube);
-      break;
-    case RpLp:
-      turn_R_prime(cube);
-      turn_L_prime(cube);
-      break;
     case R2L:
       turn_R2(cube);
       turn_L(cube);
@@ -760,6 +874,7 @@ void apply(Cube *cube, enum move move) {
       turn_L2(cube);
       turn_R_prime(cube);
       break;
+    #endif
     default:
       fprintf(stderr, "Unimplemented move\n");
       exit(EXIT_FAILURE);

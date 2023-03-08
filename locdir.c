@@ -1574,6 +1574,72 @@ void locdir_apply(LocDirCube *ldc, enum move move) {
       locdir_U_prime(ldc);
       locdir_D_prime(ldc);
       break;
+    case FB:
+      locdir_F(ldc);
+      locdir_B(ldc);
+      break;
+    case FpBp:
+      locdir_F_prime(ldc);
+      locdir_B_prime(ldc);
+      break;
+    case RL:
+      locdir_R(ldc);
+      locdir_L(ldc);
+      break;
+    case RpLp:
+      locdir_R_prime(ldc);
+      locdir_L_prime(ldc);
+      break;
+    #ifdef ALTERNATIVE_SCISSORS
+    case U2D:
+      locdir_U_prime(ldc);
+      locdir_E_prime(ldc);
+      break;
+    case U2Dp:
+      locdir_U(ldc);
+      locdir_E(ldc);
+      break;
+    case D2U:
+      locdir_D_prime(ldc);
+      locdir_E(ldc);
+      break;
+    case D2Up:
+      locdir_E_prime(ldc);
+      locdir_D(ldc);
+      break;
+    case F2B:
+      locdir_F_prime(ldc);
+      locdir_S(ldc);
+      break;
+    case F2Bp:
+      locdir_S_prime(ldc);
+      locdir_F(ldc);
+      break;
+    case B2F:
+      locdir_B_prime(ldc);
+      locdir_S_prime(ldc);
+      break;
+    case B2Fp:
+      locdir_B(ldc);
+      locdir_S(ldc);
+      break;
+    case R2L:
+      locdir_M_prime(ldc);
+      locdir_R_prime(ldc);
+      break;
+    case R2Lp:
+      locdir_M2(ldc);
+      locdir_L(ldc);
+      break;
+    case L2R:
+      locdir_M2(ldc);
+      locdir_R_prime(ldc);
+      break;
+    case L2Rp:
+      locdir_M_prime(ldc);
+      locdir_L(ldc);
+      break;
+    #else
     case U2D:
       locdir_U2(ldc);
       locdir_D(ldc);
@@ -1589,14 +1655,6 @@ void locdir_apply(LocDirCube *ldc, enum move move) {
     case D2Up:
       locdir_D2(ldc);
       locdir_U_prime(ldc);
-      break;
-    case FB:
-      locdir_F(ldc);
-      locdir_B(ldc);
-      break;
-    case FpBp:
-      locdir_F_prime(ldc);
-      locdir_B_prime(ldc);
       break;
     case F2B:
       locdir_F2(ldc);
@@ -1614,14 +1672,6 @@ void locdir_apply(LocDirCube *ldc, enum move move) {
       locdir_B2(ldc);
       locdir_F_prime(ldc);
       break;
-    case RL:
-      locdir_R(ldc);
-      locdir_L(ldc);
-      break;
-    case RpLp:
-      locdir_R_prime(ldc);
-      locdir_L_prime(ldc);
-      break;
     case R2L:
       locdir_R2(ldc);
       locdir_L(ldc);
@@ -1638,6 +1688,7 @@ void locdir_apply(LocDirCube *ldc, enum move move) {
       locdir_L2(ldc);
       locdir_R_prime(ldc);
       break;
+    #endif
     default:
       fprintf(stderr, "Unimplemented move\n");
       exit(EXIT_FAILURE);
